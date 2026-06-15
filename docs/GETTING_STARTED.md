@@ -15,15 +15,15 @@ Recommended one-command setup:
 git clone https://github.com/flyfish-dev/word-ai.git
 cd word-ai
 
-bash scripts/install.sh --install-skill
+bash scripts/install.sh
 ```
 
-This installs the Python MCP package, builds the Office.js taskpane, builds the .NET Open XML engine when .NET SDK 8 is available, writes `.wordai/codex-config.toml`, and installs the formal `word-ai` Codex Skill when `--install-skill` is present.
+This installs the Python MCP package, builds the Office.js taskpane, builds the .NET Open XML engine when .NET SDK 8 is available, writes `.wordai/codex-config.toml`, and installs the formal `word-ai` skill into Codex, Claude Code, and detected compatible agent clients.
 
 Windows PowerShell:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -InstallSkill
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1
 ```
 
 Manual setup:
@@ -36,6 +36,30 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+## Agent Skill Auto-Install
+
+The installer writes the same formal `word-ai` skill to the local discovery paths used by agent clients:
+
+- Codex official user skills: `~/.agents/skills/word-ai`
+- Codex app compatibility skills: `~/.codex/skills/word-ai`
+- Claude Code personal skills: `~/.claude/skills/word-ai`
+- Cursor, Windsurf, GitHub Copilot, and OpenClaw when their skill homes already exist
+
+To install or refresh only the skills:
+
+```bash
+python3 scripts/install_agent_skills.py
+```
+
+To install into all known client folders or add repo-scoped skills:
+
+```bash
+python3 scripts/install_agent_skills.py --agents all
+python3 scripts/install_agent_skills.py --project
+```
+
+Start a new agent session after installation. If a client does not show the skill immediately, restart that client.
 
 ## Run Local Checks
 
@@ -208,15 +232,15 @@ The live path uses these MCP tools:
 git clone https://github.com/flyfish-dev/word-ai.git
 cd word-ai
 
-bash scripts/install.sh --install-skill
+bash scripts/install.sh
 ```
 
-该命令会安装 Python MCP 包、构建 Office.js taskpane、在可用时构建 .NET Open XML 引擎、生成 `.wordai/codex-config.toml`，并在带 `--install-skill` 时安装正式 `word-ai` Codex Skill。
+该命令会安装 Python MCP 包、构建 Office.js taskpane、在可用时构建 .NET Open XML 引擎、生成 `.wordai/codex-config.toml`，并把正式 `word-ai` Skill 安装到 Codex、Claude Code 以及已检测到的兼容 Agent 客户端。
 
 Windows PowerShell：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -InstallSkill
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1
 ```
 
 手动安装：
@@ -229,6 +253,30 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+### Agent Skill 一键安装
+
+默认安装会自动写入这些本地识别目录：
+
+- Codex 官方用户 skill：`~/.agents/skills/word-ai`
+- Codex app 兼容 skill：`~/.codex/skills/word-ai`
+- Claude Code 个人 skill：`~/.claude/skills/word-ai`
+- 如果 Cursor、Windsurf、GitHub Copilot、OpenClaw 的 skill 目录已存在，也会同步安装
+
+只安装或刷新 skill：
+
+```bash
+python3 scripts/install_agent_skills.py
+```
+
+安装到所有已知客户端目录，或额外安装到项目级目录：
+
+```bash
+python3 scripts/install_agent_skills.py --agents all
+python3 scripts/install_agent_skills.py --project
+```
+
+安装后新开 Agent 会话；如果客户端没有立即显示，重启客户端即可。
 
 ### 本地验证
 

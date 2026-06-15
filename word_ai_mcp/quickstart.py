@@ -189,6 +189,17 @@ def write_codex_config(root: Path, server_name: str, output: str | None, allowed
     return 0
 
 
+def install_skills(root: Path, agents: str, include_project: bool, dry_run: bool, json_output: bool) -> int:
+    from .agent_skills import install_agent_skills, print_results
+
+    results = install_agent_skills(root, selector=agents, include_project=include_project, dry_run=dry_run)
+    if json_output:
+        print(json.dumps([result.as_dict() for result in results], indent=2))
+    else:
+        print_results(results)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Word AI quickstart helpers.")
     parser.add_argument("--root", default=None, help="Repository root. Defaults to this package's repository.")
@@ -209,6 +220,25 @@ def main(argv: list[str] | None = None) -> int:
             args.output,
             args.allow_root,
             not args.no_common_user_roots,
+        )
+    )
+
+    skills_parser = sub.add_parser("install-skills", help="Install Word AI agent skills for Codex, Claude Code, and compatible clients.")
+    skills_parser.add_argument(
+        "--agents",
+        default="auto",
+        help="Comma-separated targets: auto, all, codex, codex-legacy, claude, cursor, windsurf, copilot, openclaw.",
+    )
+    skills_parser.add_argument("--project", action="store_true", help="Also install repository-scoped .agents and .claude skills.")
+    skills_parser.add_argument("--dry-run", action="store_true", help="Print target paths without writing files.")
+    skills_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
+    skills_parser.set_defaults(
+        func=lambda args: install_skills(
+            repo_root(args.root),
+            args.agents,
+            args.project,
+            args.dry_run,
+            args.json,
         )
     )
 

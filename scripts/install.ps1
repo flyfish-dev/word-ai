@@ -1,5 +1,7 @@
 param(
   [switch]$InstallSkill,
+  [switch]$InstallAgentSkills,
+  [switch]$NoAgentSkills,
   [switch]$SkipNode,
   [switch]$SkipDotnet
 )
@@ -46,16 +48,14 @@ if (-not $SkipDotnet) {
 Write-Host "Writing Codex MCP config snippet..."
 & $VenvPython -m word_ai_mcp.quickstart --root $Root codex-config --output (Join-Path $Root ".wordai\codex-config.toml")
 
-if ($InstallSkill) {
-  $CodexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME ".codex" }
-  $SkillDest = Join-Path $CodexHome "skills\word-ai"
-  Write-Host "Installing Codex Skill to $SkillDest ..."
-  New-Item -ItemType Directory -Force -Path $SkillDest | Out-Null
-  Copy-Item -Recurse -Force (Join-Path $Root "skills\word-ai\*") $SkillDest
+if (-not $NoAgentSkills) {
+  Write-Host "Installing Word AI agent skills..."
+  & $VenvPython -m word_ai_mcp.quickstart --root $Root install-skills --agents auto
 }
 
 Write-Host ""
 Write-Host "Word AI install complete."
 Write-Host "Codex config snippet: $(Join-Path $Root '.wordai\codex-config.toml')"
+Write-Host "Agent skill installer: $VenvPython -m word_ai_mcp.quickstart --root `"$Root`" install-skills"
 Write-Host "Start local bridge + taskpane: powershell -ExecutionPolicy Bypass -File scripts\start.ps1"
 Write-Host "Word manifest: $(Join-Path $Root 'office-addin\manifest.xml')"
