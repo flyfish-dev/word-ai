@@ -1,4 +1,4 @@
-# QA Report — v0.8.0 Local Verification
+# QA Report — v0.8.1 Local Verification
 
 Verification date: 2026-06-15.
 
@@ -27,8 +27,10 @@ dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
 bash scripts/install.sh --install-skill
 WORD_AI_BRIDGE_PORT=8876 WORD_AI_TASKPANE_PORT=3100 bash scripts/start.sh --http
 mcp-publisher validate
-docker build -t word-ai:0.8.0-local .
-docker run --rm -i -v "$PWD:/workspace" word-ai:0.8.0-local
+docker build -t word-ai:0.8.1-local .
+docker run --rm -i -v "$PWD:/workspace" word-ai:0.8.1-local
+PYTHONPATH=. python scripts/build_mcpb.py --version 0.8.1 --out dist/word-ai-0.8.1.mcpb
+npx -y @anthropic-ai/mcpb validate <extracted-manifest.json>
 ```
 
 Results:
@@ -51,18 +53,22 @@ Results:
 - Live Word session queue endpoints verified through smoke: session register, queued command claim, command completion, command status, apply command enqueue, rollback command enqueue.
 - Optional OfficeCLI wrappers are present as allowlisted tools: `officecli_view_html`, `officecli_view_screenshot`, `officecli_view_issues`, `officecli_query`, `officecli_validate`.
 - Official MCP Registry metadata validation: passed for `server.json`.
-- Local OCI image build: passed for `word-ai:0.8.0-local`.
+- Local OCI image build: passed for `word-ai:0.8.1-local`.
 - OCI image labels: `io.modelcontextprotocol.server.name=io.github.flyfish-dev/word-ai`, `org.opencontainers.image.licenses=AGPL-3.0-or-later`.
-- Container stdio MCP handshake: passed with `serverInfo.version=0.8.0`.
+- Container stdio MCP handshake: passed with `serverInfo.version=0.8.1`.
 - Container `tools/list`: passed with 63 tools.
+- Deterministic MCPB build: passed for `dist/word-ai-0.8.1.mcpb`.
+- MCPB manifest validation with `@anthropic-ai/mcpb`: passed.
+- MCPB bootstrap first-run stdio test: passed with `serverInfo.version=0.8.1` and 63 tools. Dependency installation logs are routed to stderr so stdout remains valid MCP JSON.
 
 ## Global Distribution Checks
 
 - `server.json` uses official schema `https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json`.
 - MCP server name is `io.github.flyfish-dev/word-ai`.
-- Package type is OCI with identifier `ghcr.io/flyfish-dev/word-ai:0.8.0`.
+- Package type is MCPB with identifier `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.1/word-ai-0.8.1.mcpb`.
+- MCPB `fileSha256` is `efc091250b81364cc7c02ba56966f9b6dc090e03c04f191a0f976be0e155f53f`.
 - Transport is `stdio`.
-- Release workflow `.github/workflows/release-mcp.yml` publishes tagged releases to GHCR, then runs `mcp-publisher login github-oidc` and `mcp-publisher publish`.
+- Release workflow `.github/workflows/release-mcp.yml` builds a deterministic MCPB, uploads it to the GitHub Release, then runs `mcp-publisher login github-oidc`, `mcp-publisher validate`, and `mcp-publisher publish`.
 - Project license metadata is `AGPL-3.0-or-later`.
 
 ## Structural Validation Evidence

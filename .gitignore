@@ -13,6 +13,8 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.playwright-mcp/
+dist/
 
 # Node / Office add-in
 node_modules/

@@ -7,14 +7,12 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   MCP_SERVER_NAME: io.github.flyfish-dev/word-ai
-  IMAGE_NAME: ghcr.io/flyfish-dev/word-ai
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
+      contents: write
       id-token: write
     steps:
       - name: Checkout code
@@ -24,6 +22,8 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "MCPB_PATH=dist/word-ai-${VERSION}.mcpb" >> "$GITHUB_ENV"
+          echo "MCPB_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/word-ai-${VERSION}.mcpb" >> "$GITHUB_ENV"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -41,7 +41,13 @@ jobs:
           PYTHONPATH=. python scripts/run_smoke_test.py
           PYTHONPATH=. python scripts/run_word_session_smoke.py
 
-      - name: Align server.json with tag
+      - name: Build deterministic MCPB
+        run: |
+          PYTHONPATH=. python scripts/build_mcpb.py --version "$VERSION" --out "$MCPB_PATH"
+          SHA256="$(shasum -a 256 "$MCPB_PATH" | awk '{print $1}')"
+          echo "MCPB_SHA256=${SHA256}" >> "$GITHUB_ENV"
+
+      - name: Align server.json with tag and MCPB
         run: |
           python - <<'PY'
           import json
@@ -52,11 +58,19 @@ jobs:
           data = json.loads(path.read_text())
           version = os.environ["VERSION"]
           server_name = os.environ["MCP_SERVER_NAME"]
-          image_name = os.environ["IMAGE_NAME"]
+          mcpb_url = os.environ["MCPB_URL"]
+          mcpb_sha256 = os.environ["MCPB_SHA256"]
 
           data["name"] = server_name
           data["version"] = version
-          data["packages"][0]["identifier"] = f"{image_name}:{version}"
+          data["packages"] = [
+              {
+                  "registryType": "mcpb",
+                  "identifier": mcpb_url,
+                  "fileSha256": mcpb_sha256,
+                  "transport": {"type": "stdio"},
+              }
+          ]
           path.write_text(json.dumps(data, indent=2) + "\n")
           PY
 
@@ -70,25 +84,28 @@ jobs:
           data = json.loads(Path("server.json").read_text())
           assert data["name"] == os.environ["MCP_SERVER_NAME"]
           assert data["version"] == os.environ["VERSION"]
-          assert data["packages"][0]["registryType"] == "oci"
-          assert data["packages"][0]["identifier"] == f'{os.environ["IMAGE_NAME"]}:{os.environ["VERSION"]}'
+          assert data["packages"][0]["registryType"] == "mcpb"
+          assert data["packages"][0]["identifier"] == os.environ["MCPB_URL"]
+          assert data["packages"][0]["fileSha256"] == os.environ["MCPB_SHA256"]
           assert data["packages"][0]["transport"]["type"] == "stdio"
           print("server.json release metadata is valid")
           PY
 
-      - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-      - name: Build and push OCI image
+      - name: Docker build smoke
         run: |
-          docker build \
-            --label "io.modelcontextprotocol.server.name=${MCP_SERVER_NAME}" \
-            --label "org.opencontainers.image.version=${VERSION}" \
-            --tag "${IMAGE_NAME}:${VERSION}" \
-            --tag "${IMAGE_NAME}:latest" \
-            .
-          docker push "${IMAGE_NAME}:${VERSION}"
-          docker push "${IMAGE_NAME}:latest"
+          docker build --tag "word-ai:${VERSION}" .
+
+      - name: Create or update GitHub release asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$MCPB_PATH" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$MCPB_PATH" \
+              --title "Word AI ${VERSION}" \
+              --notes-file "docs/CHANGELOG_V081.md"
+          fi
 
       - name: Install mcp-publisher
         run: |
@@ -97,6 +114,9 @@ jobs:
 
       - name: Authenticate to MCP Registry
         run: ./mcp-publisher login github-oidc
+
+      - name: Validate MCP Registry metadata
+        run: ./mcp-publisher validate
 
       - name: Publish to MCP Registry
         run: ./mcp-publisher publish
