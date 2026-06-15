@@ -1,6 +1,6 @@
 # AGENTS.md — Word AI MCP 使用规则
 
-处理 Word DOCX 交付文档时，必须把结构稳定放在内容生成之前。本工程提供 49 个 MCP tools；读/分析工具可以充分调用，正式写入必须通过 PatchSet。
+处理 Word DOCX 交付文档时，必须把结构稳定放在内容生成之前。本工程提供 63 个 MCP tools；读/分析工具可以充分调用，正式写入必须通过 PatchSet。
 
 ## 不可违反的原则
 
@@ -10,6 +10,8 @@
 - 优先使用内容控件 tag 作为写入锚点。
 - 写入前必须 assess + dry-run；写入后必须 validate + diff。
 - 不修改样式、编号、页眉页脚、目录、字段、关系文件、图片关系，除非用户明确授权并进入高风险审批模式。
+- 离线文件编辑优先使用 `docx_*`；用户明确要求编辑当前 Word 窗口或已连接 Office.js taskpane 时，才使用 `word_session_*`。
+- OfficeCLI 只能作为只读/低风险证据辅助，不作为默认写入路径。
 
 ## 标准 Codex 流程
 

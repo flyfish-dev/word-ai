@@ -1,8 +1,14 @@
-# Example Codex-style local MCP configuration. Adjust the exact location to your Codex client config.
-# The server deliberately scopes all file access to this repository root.
+# Example Codex-style local source-install MCP configuration.
+# Prefer MCP Registry/MCPB installation when your MCP host supports it.
+# Add --allow-root entries for document folders that Codex may inspect or edit.
 [mcp_servers.word_ai]
 command = "/absolute/path/to/word-ai/.venv/bin/python"
-args = ["-m", "word_ai_mcp.server", "--root", "/absolute/path/to/word-ai"]
+args = [
+  "-m", "word_ai_mcp.server",
+  "--root", "/absolute/path/to/word-ai",
+  "--allow-root", "/Users/you/Downloads",
+  "--allow-root", "/Users/you/Documents"
+]
 enabled = true
 startup_timeout_sec = 30
 
@@ -46,4 +52,7 @@ approval_mode = "approve"
 approval_mode = "approve"
 
 [mcp_servers.word_ai.tools.word_session_rollback]
+approval_mode = "approve"
+
+[mcp_servers.word_ai.tools.officecli_view_screenshot]
 approval_mode = "approve"

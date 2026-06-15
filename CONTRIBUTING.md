@@ -7,10 +7,10 @@ Thank you for contributing to Word AI.
 ## Development Setup
 
 ```bash
-bash scripts/install.sh --install-skill
+bash scripts/install.sh
 ```
 
-Use `bash scripts/install.sh --skip-node` or `--skip-dotnet` only when intentionally working on a narrower area.
+The default installer sets up the Python MCP server, Office.js taskpane, .NET Open XML engine when available, Codex config snippet, and the `word-ai` Agent Skill for Codex, Claude Code, and compatible clients. Use `bash scripts/install.sh --skip-node`, `--skip-dotnet`, or `--no-agent-skills` only when intentionally working on a narrower area.
 
 ## Required Checks
 
@@ -41,6 +41,7 @@ npm audit --omit=dev --registry=https://registry.npmjs.org --json
 - Prefer content-control tags as edit anchors.
 - Add or update validation coverage for every write operation.
 - Keep generated files, local tokens, build artifacts, and Office lock files out of commits.
+- When updating installation docs, present MCP Registry/MCPB and Agent Skill installation as the primary path; keep npm as a secondary convenience channel for hosts that cannot consume MCP Registry packages yet.
 
 ## 中文说明
 

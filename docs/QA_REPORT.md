@@ -24,7 +24,7 @@ PYTHONPATH=. python scripts/run_dotnet_regression.py
 PYTHONPATH=. python scripts/run_office_bridge_smoke.py
 PYTHONPATH=. python scripts/validate_word_ai_skill.py
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
-bash scripts/install.sh --install-skill
+bash scripts/install.sh
 WORD_AI_BRIDGE_PORT=8876 WORD_AI_TASKPANE_PORT=3100 bash scripts/start.sh --http
 mcp-publisher validate
 docker build -t word-ai:0.8.1-local .
@@ -70,6 +70,8 @@ Results:
 - Transport is `stdio`.
 - Release workflow `.github/workflows/release-mcp.yml` builds a deterministic MCPB, uploads it to the GitHub Release, then runs `mcp-publisher login github-oidc`, `mcp-publisher validate`, and `mcp-publisher publish`.
 - Project license metadata is `AGPL-3.0-or-later`.
+- MCP Registry/MCPB is the primary global distribution path for MCP host discovery.
+- npm is a secondary convenience channel. Published packages were verified separately as `@flyfish-dev/word-ai@0.8.1` and unscoped `word-ai-mcp@0.8.2`.
 
 ## Structural Validation Evidence
 
@@ -190,4 +192,4 @@ Browser verification against `http://localhost:3000/taskpane.html`:
 - Word desktop sideload and true Office.js host operations (`Wrap`, `List Open`, `Apply Open`, `word_session_apply_patchset`) were not fully automated in this browser-only pass. The TypeScript host code compiles, and the local queue protocol is covered by smoke tests; a real Word host is still required to execute `Word.run(...)`.
 - HTTPS dev server certificate flow (`npm run dev`) was not exercised because the automated check used `npm run dev:http`; manifest HTTPS validation passed.
 - True MCP Streamable HTTP compatibility: current HTTP adapter is a basic local JSON-RPC adapter, not a production remote MCP transport.
-- Actual MCP Registry publication depends on pushing a `v*` tag and the GitHub Actions release workflow completing successfully.
+- Future MCP Registry publications depend on pushing a `v*` tag and the GitHub Actions release workflow completing successfully.
