@@ -1,5 +1,7 @@
 # Word AI
 
+<!-- mcp-name: io.github.flyfish-dev/word-ai -->
+
 **Structure-preserving Word (DOCX) editing for AI agents.**
 
 Word AI is an open-source MCP server and Office.js bridge for safe, auditable, incremental editing of Microsoft Word documents. It is designed for Codex, OpenAI Agents, and other MCP clients that need to edit `.docx` files without rebuilding the document or damaging styles, numbering, tables, images, fields, headers, footers, and relationships.
@@ -102,6 +104,26 @@ cd office-addin
 npm install
 npm run build
 ```
+
+## Global MCP Distribution
+
+Word AI is prepared for discovery through the official MCP Registry and OCI distribution:
+
+- MCP server name: `io.github.flyfish-dev/word-ai`
+- OCI image: `ghcr.io/flyfish-dev/word-ai:0.8.0`
+- Registry metadata: [server.json](server.json)
+- Publishing guide: [MCP Registry Publishing](docs/REGISTRY_PUBLISHING.md)
+
+Container smoke test:
+
+```bash
+docker run --rm -i \
+  -v "$PWD:/workspace" \
+  -v "$HOME/Downloads:/documents/Downloads" \
+  ghcr.io/flyfish-dev/word-ai:0.8.0
+```
+
+The container starts the stdio MCP server with `/workspace` as the primary root and `/documents` as an additional allowed root. For full Office.js live-session editing, use the local install path because the Word taskpane and localhost bridge must run on the user's machine.
 
 ## Use With Codex MCP
 
@@ -228,6 +250,8 @@ docx_health_check
 - [Security Design](docs/SECURITY.md)
 - [QA Report](docs/QA_REPORT.md)
 - [Validation Matrix](docs/VALIDATION_MATRIX.md)
+- [MCP Registry Publishing](docs/REGISTRY_PUBLISHING.md)
+- [v0.8.0 Changelog](docs/CHANGELOG_V080.md)
 - [v0.7.1 Changelog](docs/CHANGELOG_V071.md)
 - [v0.7 Changelog](docs/CHANGELOG_V07.md)
 
@@ -237,7 +261,7 @@ Word AI is currently a local-first developer tool. It is suitable for controlled
 
 ## License
 
-MIT License. See [LICENSE](LICENSE).
+GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`). See [LICENSE](LICENSE).
 
 ---
 
@@ -324,6 +348,26 @@ npm install
 npm run build
 ```
 
+## 全球 MCP 分发
+
+Word AI 已准备通过官方 MCP Registry 和 OCI 镜像进行全球发现和安装：
+
+- MCP server 名称：`io.github.flyfish-dev/word-ai`
+- OCI 镜像：`ghcr.io/flyfish-dev/word-ai:0.8.0`
+- Registry 元数据：[server.json](server.json)
+- 发布说明：[MCP Registry Publishing](docs/REGISTRY_PUBLISHING.md)
+
+容器 smoke test：
+
+```bash
+docker run --rm -i \
+  -v "$PWD:/workspace" \
+  -v "$HOME/Downloads:/documents/Downloads" \
+  ghcr.io/flyfish-dev/word-ai:0.8.0
+```
+
+容器默认启动 stdio MCP server，将 `/workspace` 作为主 root，将 `/documents` 作为额外允许访问目录。完整 Office.js live session 编辑仍建议使用本地安装方式，因为 Word taskpane 和 localhost bridge 需要运行在用户机器上。
+
 ## 在 Codex 中使用
 
 安装脚本会生成可合并到 Codex 的 MCP 配置片段：
@@ -395,5 +439,11 @@ docx_health_check
 - [安全设计](docs/SECURITY.md)
 - [QA 验证报告](docs/QA_REPORT.md)
 - [验证矩阵](docs/VALIDATION_MATRIX.md)
+- [MCP Registry 发布说明](docs/REGISTRY_PUBLISHING.md)
+- [v0.8.0 变更记录](docs/CHANGELOG_V080.md)
 - [v0.7.1 变更记录](docs/CHANGELOG_V071.md)
 - [v0.7 变更记录](docs/CHANGELOG_V07.md)
+
+## 许可证
+
+GNU Affero General Public License v3.0 or later（`AGPL-3.0-or-later`）。详见 [LICENSE](LICENSE)。

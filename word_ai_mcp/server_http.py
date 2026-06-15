@@ -88,7 +88,7 @@ def make_handler(root: str, allow_write: bool, token: str, allowed_roots: list[s
     }
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = "WordAiMcpHTTP/0.7.1"
+        server_version = "WordAiMcpHTTP/0.8.0"
 
         def log_message(self, fmt: str, *args: Any) -> None:
             print("%s - - [%s] %s" % (self.client_address[0], self.log_date_time_string(), fmt % args))

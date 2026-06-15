@@ -1,0 +1,17 @@
+.git
+.github
+.venv
+.wordai
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.DS_Store
+office-addin/node_modules
+office-addin/dist
+office-addin/.webpack
+dotnet/**/bin
+dotnet/**/obj
+*.docx
+*.png
+*.pdf
+*.log

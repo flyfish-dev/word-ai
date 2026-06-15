@@ -1,0 +1,102 @@
+name: Release MCP Registry
+
+on:
+  push:
+    tags: ["v*"]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  MCP_SERVER_NAME: io.github.flyfish-dev/word-ai
+  IMAGE_NAME: ghcr.io/flyfish-dev/word-ai
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Compute release version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run MCP smoke checks
+        run: |
+          PYTHONPATH=. python -m compileall word_ai_mcp scripts
+          PYTHONPATH=. python scripts/run_smoke_test.py
+          PYTHONPATH=. python scripts/run_word_session_smoke.py
+
+      - name: Align server.json with tag
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("server.json")
+          data = json.loads(path.read_text())
+          version = os.environ["VERSION"]
+          server_name = os.environ["MCP_SERVER_NAME"]
+          image_name = os.environ["IMAGE_NAME"]
+
+          data["name"] = server_name
+          data["version"] = version
+          data["packages"][0]["identifier"] = f"{image_name}:{version}"
+          path.write_text(json.dumps(data, indent=2) + "\n")
+          PY
+
+      - name: Validate release metadata
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          data = json.loads(Path("server.json").read_text())
+          assert data["name"] == os.environ["MCP_SERVER_NAME"]
+          assert data["version"] == os.environ["VERSION"]
+          assert data["packages"][0]["registryType"] == "oci"
+          assert data["packages"][0]["identifier"] == f'{os.environ["IMAGE_NAME"]}:{os.environ["VERSION"]}'
+          assert data["packages"][0]["transport"]["type"] == "stdio"
+          print("server.json release metadata is valid")
+          PY
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and push OCI image
+        run: |
+          docker build \
+            --label "io.modelcontextprotocol.server.name=${MCP_SERVER_NAME}" \
+            --label "org.opencontainers.image.version=${VERSION}" \
+            --tag "${IMAGE_NAME}:${VERSION}" \
+            --tag "${IMAGE_NAME}:latest" \
+            .
+          docker push "${IMAGE_NAME}:${VERSION}"
+          docker push "${IMAGE_NAME}:latest"
+
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+          chmod +x mcp-publisher
+
+      - name: Authenticate to MCP Registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish to MCP Registry
+        run: ./mcp-publisher publish
