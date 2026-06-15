@@ -17,6 +17,8 @@ This is a compatibility copy of the formal Word AI Codex Skill. The canonical pr
 
 Never silently fall back from a requested live Word session to offline file editing. If no live session exists, ask the user to load the Office.js add-in and connect the bridge.
 
+For file paths outside the repository, use Word AI only when the path is inside the configured primary `--root` or an explicit `--allow-root` directory. Add common user document folders such as Downloads, Documents, and Desktop to Codex config instead of copying source files into the repository.
+
 ## Offline DOCX Workflow
 
 1. Run `docx_health_check`.

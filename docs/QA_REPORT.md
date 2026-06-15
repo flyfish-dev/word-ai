@@ -1,4 +1,4 @@
-# QA Report — v0.7 Local Verification
+# QA Report — v0.7.1 Local Verification
 
 Verification date: 2026-06-15.
 
@@ -39,6 +39,7 @@ Results:
 - Word AI Skill validation: passed.
 - One-command install script: passed.
 - One-command start script: passed on alternate ports `8876` and `3100`.
+- Multi-root path policy smoke: passed; external absolute paths are rejected by default and allowed only with `--allow-root`.
 - Advertised MCP tools: 63.
 - Stdio MCP handshake and `tools/list`: passed.
 - Basic HTTP adapter `/health` and `/mcp tools/list`: passed on `127.0.0.1:8765`.

@@ -16,6 +16,7 @@ This directory contains the design, tool contract, safety policy, and validation
 - [Stability Policy](STABILITY_POLICY.md): editing risk classes and safety boundaries.
 - [Development Plan](DEVELOPMENT_PLAN.md): roadmap for production hardening.
 - [Code Tool Catalog](CODEX_TOOL_CATALOG.md): generated MCP tool catalog.
+- [v0.7.1 Changelog](CHANGELOG_V071.md): multi-root path access for external document folders.
 - [v0.7 Changelog](CHANGELOG_V07.md): formal Codex Skill, OfficeCLI boundaries, and one-command startup.
 - [v0.6 Changelog](CHANGELOG_V06.md): live Word session MCP workflow.
 
@@ -32,6 +33,7 @@ This directory contains the design, tool contract, safety policy, and validation
 - [稳定性策略](STABILITY_POLICY.md)：编辑风险分级与安全边界。
 - [开发计划](DEVELOPMENT_PLAN.md)：生产化路线图。
 - [工具清单](CODEX_TOOL_CATALOG.md)：MCP tools 目录。
+- [v0.7.1 变更记录](CHANGELOG_V071.md)：面向外部文档目录的多 root 路径访问。
 - [v0.7 变更记录](CHANGELOG_V07.md)：正式 Codex Skill、OfficeCLI 边界和一键启动。
 - [v0.6 变更记录](CHANGELOG_V06.md)：Word 会话 MCP 闭环。
 

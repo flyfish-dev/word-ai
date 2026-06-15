@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from word_ai_mcp.ooxml import (
     apply_patchset,
@@ -16,6 +17,7 @@ from word_ai_mcp.ooxml import (
     validate_structure,
     write_sidecar_index,
 )
+from word_ai_mcp.server import WordAiMcpServer
 
 ROOT = Path(__file__).resolve().parent.parent
 SAMPLE = ROOT / "examples" / "sample_contract.docx"
@@ -24,6 +26,22 @@ OUT = ROOT / "examples" / "sample_contract.edited.docx"
 
 
 def main() -> None:
+    print("Checking path policy...")
+    with TemporaryDirectory() as temp_dir:
+        temp = Path(temp_dir)
+        allowed = temp / "allowed"
+        allowed.mkdir()
+        outside = allowed / "external.docx"
+        default_server = WordAiMcpServer(root=str(ROOT))
+        try:
+            default_server._resolve_path(str(outside))
+        except PermissionError:
+            pass
+        else:
+            raise AssertionError("absolute path outside root should be rejected without allow-root")
+        allowed_server = WordAiMcpServer(root=str(ROOT), allowed_roots=[str(allowed)])
+        assert allowed_server._resolve_path(str(outside)) == str(outside.resolve())
+
     print("Inspecting sample...")
     info = inspect_docx(SAMPLE)
     assert info["content_control_count"] == 3, info

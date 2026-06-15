@@ -116,13 +116,20 @@ Add it to your Codex MCP config. The generated snippet includes write-tool appro
 ```toml
 [mcp_servers.word_ai]
 command = "/absolute/path/to/word-ai/.venv/bin/python"
-args = ["-m", "word_ai_mcp.server", "--root", "/absolute/path/to/word-ai"]
+args = [
+  "-m", "word_ai_mcp.server",
+  "--root", "/absolute/path/to/word-ai",
+  "--allow-root", "/Users/you/Downloads",
+  "--allow-root", "/Users/you/Documents"
+]
 enabled = true
 startup_timeout_sec = 30
 
 [mcp_servers.word_ai.env]
 PYTHONPATH = "/absolute/path/to/word-ai"
 ```
+
+`--root` is the primary workspace for relative paths and Word AI sidecars. Repeat `--allow-root` for external document folders you want Codex to edit, such as Downloads, Documents, or a team project folder. The installer-generated `.wordai/codex-config.toml` includes common user document folders automatically.
 
 Recommended approval policy for write tools:
 
@@ -221,6 +228,7 @@ docx_health_check
 - [Security Design](docs/SECURITY.md)
 - [QA Report](docs/QA_REPORT.md)
 - [Validation Matrix](docs/VALIDATION_MATRIX.md)
+- [v0.7.1 Changelog](docs/CHANGELOG_V071.md)
 - [v0.7 Changelog](docs/CHANGELOG_V07.md)
 
 ## Repository Status
@@ -329,13 +337,20 @@ cat .wordai/codex-config.toml
 ```toml
 [mcp_servers.word_ai]
 command = "/absolute/path/to/word-ai/.venv/bin/python"
-args = ["-m", "word_ai_mcp.server", "--root", "/absolute/path/to/word-ai"]
+args = [
+  "-m", "word_ai_mcp.server",
+  "--root", "/absolute/path/to/word-ai",
+  "--allow-root", "/Users/you/Downloads",
+  "--allow-root", "/Users/you/Documents"
+]
 enabled = true
 startup_timeout_sec = 30
 
 [mcp_servers.word_ai.env]
 PYTHONPATH = "/absolute/path/to/word-ai"
 ```
+
+`--root` 是相对路径和 `.wordai` sidecar 的主工作区。需要编辑 Downloads、Documents 或团队目录中的原始 DOCX 时，重复添加 `--allow-root`。安装脚本生成的 `.wordai/codex-config.toml` 会自动加入常见用户文档目录。
 
 推荐将写入类工具设置为需要审批，尤其是 `docx_apply_patchset`、`docx_restore_backup`、`docx_rollback`。
 打开的 Word 文档会话写入也应审批：`word_session_apply_patchset`、`word_session_wrap_selection`、`word_session_rollback`。
@@ -380,4 +395,5 @@ docx_health_check
 - [安全设计](docs/SECURITY.md)
 - [QA 验证报告](docs/QA_REPORT.md)
 - [验证矩阵](docs/VALIDATION_MATRIX.md)
+- [v0.7.1 变更记录](docs/CHANGELOG_V071.md)
 - [v0.7 变更记录](docs/CHANGELOG_V07.md)

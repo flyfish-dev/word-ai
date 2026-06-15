@@ -20,6 +20,13 @@ $RunDir = Join-Path $Root ".wordai\run"
 $TokenPath = Join-Path $Root ".wordai\bridge.token"
 New-Item -ItemType Directory -Force -Path $RunDir | Out-Null
 
+$AllowedRootArgs = @()
+foreach ($Candidate in @((Join-Path $HOME "Downloads"), (Join-Path $HOME "Documents"), (Join-Path $HOME "Desktop"))) {
+  if (Test-Path $Candidate) {
+    $AllowedRootArgs += @("--allow-root", (Resolve-Path $Candidate).Path)
+  }
+}
+
 $Token = $env:WORD_AI_TOKEN
 if (-not $Token -and (Test-Path $TokenPath)) {
   $Token = (Get-Content $TokenPath -Raw).Trim()
@@ -38,6 +45,7 @@ try {
     $BridgeLog = Join-Path $RunDir "bridge.log"
     $BridgeErr = Join-Path $RunDir "bridge.err.log"
     $BridgeArgs = @("-m", "word_ai_mcp.server_http", "--root", $Root, "--host", $BridgeHost, "--port", $BridgePort, "--token", $Token)
+    $BridgeArgs += $AllowedRootArgs
     $Bridge = Start-Process -FilePath $VenvPython -ArgumentList $BridgeArgs -WorkingDirectory $Root -PassThru -NoNewWindow -RedirectStandardOutput $BridgeLog -RedirectStandardError $BridgeErr
     Set-Content -Path (Join-Path $RunDir "bridge.pid") -Value $Bridge.Id
   }
@@ -67,6 +75,9 @@ try {
   }
   Write-Host "Bridge token: $Token"
   Write-Host "Manifest: $(Join-Path $Root 'office-addin\manifest.xml')"
+  if ($AllowedRootArgs.Count -gt 0) {
+    Write-Host "Additional allowed roots: $($AllowedRootArgs -join ' ')"
+  }
   Write-Host "Logs: $RunDir"
   Write-Host "Stop with Ctrl-C or scripts\stop.ps1"
 

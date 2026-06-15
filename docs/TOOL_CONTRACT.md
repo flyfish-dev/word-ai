@@ -10,6 +10,7 @@
 4. **前置条件优先**：关键修改必须带 `source_sha256`、`expected_old_text` 或 `expected_old_sha256`。
 5. **复杂对象默认保护**：目标含表格、图片、字段、批注、修订痕迹、嵌套内容控件时，替换操作默认风险上报或拒绝，除非显式 `allow_complex_content=true`。
 6. **不变量验证阻断交付**：未授权 part 变化、非目标对象 hash 变化、表格/图片/字段/批注/修订计数异常，均导致 `ok=false`。
+7. **多 root 路径白名单**：相对路径基于主 `--root` 解析；外部绝对路径必须位于显式 `--allow-root` 或 `WORD_AI_ALLOWED_ROOTS` 白名单内。
 
 ## 推荐调用链
 

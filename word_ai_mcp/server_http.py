@@ -75,8 +75,8 @@ def _default_output_path(source_docx: str) -> str:
     return str(out_dir / f"{source.stem}.{stamp}.docx")
 
 
-def make_handler(root: str, allow_write: bool, token: str):
-    server = WordAiMcpServer(root=root, allow_write=allow_write)
+def make_handler(root: str, allow_write: bool, token: str, allowed_roots: list[str] | None = None):
+    server = WordAiMcpServer(root=root, allow_write=allow_write, allowed_roots=allowed_roots)
     allowed_origins = {
         "http://localhost:3000",
         "https://localhost:3000",
@@ -88,7 +88,7 @@ def make_handler(root: str, allow_write: bool, token: str):
     }
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = "WordAiMcpHTTP/0.7"
+        server_version = "WordAiMcpHTTP/0.7.1"
 
         def log_message(self, fmt: str, *args: Any) -> None:
             print("%s - - [%s] %s" % (self.client_address[0], self.log_date_time_string(), fmt % args))
@@ -261,6 +261,7 @@ def make_handler(root: str, allow_write: bool, token: str):
                         "office_bridge": True,
                         "auth_required": True,
                         "allow_write": allow_write,
+                        "allowed_roots": [str(p) for p in server.allowed_roots],
                     },
                 )
             elif path == "/office/capabilities":
@@ -356,11 +357,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--read-only", action="store_true")
     parser.add_argument("--token", default=os.environ.get("WORD_AI_MCP_TOKEN"))
+    parser.add_argument("--allow-root", action="append", default=[], help="Additional directory allowed for DOCX input/output. Repeatable. WORD_AI_ALLOWED_ROOTS also works.")
     args = parser.parse_args(argv)
 
     root = Path(args.root).resolve()
     token = args.token or _load_or_create_token(root)
-    httpd = ThreadingHTTPServer((args.host, args.port), make_handler(str(root), allow_write=not args.read_only, token=token))
+    httpd = ThreadingHTTPServer((args.host, args.port), make_handler(str(root), allow_write=not args.read_only, token=token, allowed_roots=args.allow_root))
     print(f"word-ai-mcp HTTP server listening at http://{args.host}:{args.port}/mcp")
     print(f"office bridge listening at http://{args.host}:{args.port}/office")
     print(f"office bridge token: {token}")

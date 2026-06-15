@@ -85,12 +85,23 @@ Add it to your Codex config. The generated snippet includes write-tool approvals
 ```toml
 [mcp_servers.word_ai]
 command = "/absolute/path/to/word-ai/.venv/bin/python"
-args = ["-m", "word_ai_mcp.server", "--root", "/absolute/path/to/word-ai"]
+args = [
+  "-m", "word_ai_mcp.server",
+  "--root", "/absolute/path/to/word-ai",
+  "--allow-root", "/Users/you/Downloads",
+  "--allow-root", "/Users/you/Documents"
+]
 enabled = true
 startup_timeout_sec = 30
 
 [mcp_servers.word_ai.env]
 PYTHONPATH = "/absolute/path/to/word-ai"
+```
+
+Use `--allow-root` for external folders that contain source DOCX files. The installer-generated config includes `~/Downloads`, `~/Documents`, and `~/Desktop` when those folders exist. You can add more roots with:
+
+```bash
+.venv/bin/word-ai --root "$PWD" codex-config --allow-root "/path/to/team/docs" --output .wordai/codex-config.toml
 ```
 
 For production-like use, require approval on all write tools:
@@ -240,7 +251,13 @@ PYTHONPATH=. .venv/bin/python scripts/run_dotnet_regression.py
 cat .wordai/codex-config.toml
 ```
 
-将其中的 `mcp_servers.word_ai` 配置加入 Codex 配置文件。新增 MCP server 后，通常需要新开 Codex 会话或重启 Codex 才会加载。
+将其中的 `mcp_servers.word_ai` 配置加入 Codex 配置文件。安装脚本生成的配置会在存在时自动加入 `~/Downloads`、`~/Documents` 和 `~/Desktop`。如果还要访问其他目录，可使用：
+
+```bash
+.venv/bin/word-ai --root "$PWD" codex-config --allow-root "/path/to/team/docs" --output .wordai/codex-config.toml
+```
+
+新增 MCP server 或修改 `--allow-root` 后，通常需要新开 Codex 会话或重启 Codex 才会加载。
 
 ### Office Bridge
 

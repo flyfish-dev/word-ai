@@ -45,12 +45,37 @@ def toml_string(value: str) -> str:
     return json.dumps(value)
 
 
-def build_codex_config(root: Path, server_name: str = "word_ai") -> str:
+def default_allowed_roots(root: Path) -> list[Path]:
+    home = Path.home()
+    candidates = [
+        home / "Downloads",
+        home / "Documents",
+        home / "Desktop",
+    ]
+    out: list[Path] = []
+    for candidate in candidates:
+        path = candidate.expanduser().resolve()
+        if path.exists() and path != root and path not in out:
+            out.append(path)
+    return out
+
+
+def build_codex_config(root: Path, server_name: str = "word_ai", allowed_roots: list[str] | None = None, include_common_user_roots: bool = True) -> str:
     python_path = preferred_python(root)
+    extra_roots = [Path(p).expanduser().resolve() for p in (allowed_roots or [])]
+    if include_common_user_roots:
+        extra_roots = [*default_allowed_roots(root), *extra_roots]
+    resolved_extra_roots: list[Path] = []
+    for path in extra_roots:
+        if path != root and path not in resolved_extra_roots:
+            resolved_extra_roots.append(path)
+    server_args = ["-m", "word_ai_mcp.server", "--root", str(root)]
+    for allowed in resolved_extra_roots:
+        server_args.extend(["--allow-root", str(allowed)])
     lines = [
         f"[mcp_servers.{server_name}]",
         f"command = {toml_string(str(python_path))}",
-        f"args = [\"-m\", \"word_ai_mcp.server\", \"--root\", {toml_string(str(root))}]",
+        f"args = {json.dumps(server_args)}",
         "enabled = true",
         "startup_timeout_sec = 30",
         "",
@@ -122,12 +147,15 @@ def doctor(root: Path) -> int:
     print()
     print(f"Repo root: {root}")
     print(f"Python for Codex: {preferred_python(root)}")
+    print("Default allowed roots:")
+    for allowed in default_allowed_roots(root):
+        print(f"  - {allowed}")
     print(f"Codex config snippet: {root / '.wordai' / 'codex-config.toml'}")
     return 0 if ok else 1
 
 
-def write_codex_config(root: Path, server_name: str, output: str | None) -> int:
-    text = build_codex_config(root, server_name)
+def write_codex_config(root: Path, server_name: str, output: str | None, allowed_roots: list[str] | None, include_common_user_roots: bool) -> int:
+    text = build_codex_config(root, server_name, allowed_roots=allowed_roots, include_common_user_roots=include_common_user_roots)
     if output:
         out = Path(output).expanduser()
         if not out.is_absolute():
@@ -151,7 +179,17 @@ def main(argv: list[str] | None = None) -> int:
     config_parser = sub.add_parser("codex-config", help="Print or write a Codex MCP config snippet.")
     config_parser.add_argument("--server-name", default="word_ai")
     config_parser.add_argument("--output", default=None)
-    config_parser.set_defaults(func=lambda args: write_codex_config(repo_root(args.root), args.server_name, args.output))
+    config_parser.add_argument("--allow-root", action="append", default=[], help="Additional allowed directory. Repeatable.")
+    config_parser.add_argument("--no-common-user-roots", action="store_true", help="Do not include ~/Downloads, ~/Documents, and ~/Desktop automatically.")
+    config_parser.set_defaults(
+        func=lambda args: write_codex_config(
+            repo_root(args.root),
+            args.server_name,
+            args.output,
+            args.allow_root,
+            not args.no_common_user_roots,
+        )
+    )
 
     args = parser.parse_args(argv)
     return int(args.func(args))

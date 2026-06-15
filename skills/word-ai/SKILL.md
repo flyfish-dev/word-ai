@@ -20,6 +20,8 @@ Choose one mode before editing:
 
 Never silently fall back from live Word session editing to offline file editing. If no active session exists, say that Word must have the taskpane open and connected, then offer offline file editing only when the user provides a file path.
 
+For file paths outside the repository, use Word AI only when the path is inside the configured primary `--root` or an explicit `--allow-root` directory. Common user document folders such as Downloads, Documents, and Desktop should be added as allowed roots in Codex config instead of copying source files into the repository.
+
 ## Offline DOCX Workflow
 
 Use this for files on disk:

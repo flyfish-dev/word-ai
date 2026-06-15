@@ -28,7 +28,7 @@ The Python MCP server exposes 63 tools:
 - live Word session listing, snapshot, content-control reads, PatchSet preview/apply, selection wrapping, rollback, and command status
 - optional OfficeCLI auxiliary evidence: HTML rendering, screenshot sidecar export, issues, query, and validation
 
-All paths are scoped to the configured root directory.
+All paths are scoped to the configured primary root plus explicit `--allow-root` directories. Relative paths resolve under the primary root; absolute paths must be inside one of the allowed roots.
 
 ### Python OOXML Engine
 

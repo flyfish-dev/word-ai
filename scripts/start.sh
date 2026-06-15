@@ -56,6 +56,13 @@ RUN_DIR="$ROOT/.wordai/run"
 TOKEN_PATH="$ROOT/.wordai/bridge.token"
 mkdir -p "$RUN_DIR" "$ROOT/.wordai"
 
+ALLOWED_ROOT_ARGS=()
+for candidate in "$HOME/Downloads" "$HOME/Documents" "$HOME/Desktop"; do
+  if [ -d "$candidate" ]; then
+    ALLOWED_ROOT_ARGS+=(--allow-root "$candidate")
+  fi
+done
+
 TOKEN="${WORD_AI_TOKEN:-}"
 if [ -z "$TOKEN" ] && [ -f "$TOKEN_PATH" ]; then
   TOKEN="$(tr -d '\r\n' < "$TOKEN_PATH")"
@@ -92,7 +99,8 @@ if [ "$TASKPANE_ONLY" -eq 0 ]; then
     --root "$ROOT" \
     --host "$BRIDGE_HOST" \
     --port "$BRIDGE_PORT" \
-    --token "$TOKEN" > "$BRIDGE_LOG" 2>&1 &
+    --token "$TOKEN" \
+    "${ALLOWED_ROOT_ARGS[@]}" > "$BRIDGE_LOG" 2>&1 &
   BRIDGE_PID="$!"
   printf '%s\n' "$BRIDGE_PID" > "$RUN_DIR/bridge.pid"
 
@@ -136,6 +144,9 @@ if [ "$BRIDGE_ONLY" -eq 0 ]; then
 fi
 echo "Bridge token: $TOKEN"
 echo "Manifest: $ROOT/office-addin/manifest.xml"
+if [ "${#ALLOWED_ROOT_ARGS[@]}" -gt 0 ]; then
+  echo "Additional allowed roots: ${ALLOWED_ROOT_ARGS[*]}"
+fi
 echo "Logs: $RUN_DIR"
 echo "Stop with Ctrl-C or: bash scripts/stop.sh"
 echo

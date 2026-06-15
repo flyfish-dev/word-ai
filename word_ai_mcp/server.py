@@ -79,10 +79,30 @@ def _schema(props: dict[str, Any], required: list[str] | None = None) -> JSON:
     return {"type": "object", "properties": props, "required": required or [], "additionalProperties": False}
 
 
+def _split_path_values(values: list[str] | None) -> list[str]:
+    out: list[str] = []
+    for value in values or []:
+        for item in str(value).split(os.pathsep):
+            item = item.strip()
+            if item:
+                out.append(item)
+    return out
+
+
+def _normalize_root(value: str | Path) -> Path:
+    return Path(os.path.expandvars(str(value))).expanduser().resolve()
+
+
 class WordAiMcpServer:
-    def __init__(self, root: str | None = None, allow_write: bool = True):
-        self.root = Path(root or os.getcwd()).resolve()
+    def __init__(self, root: str | None = None, allow_write: bool = True, allowed_roots: list[str] | None = None):
+        self.root = _normalize_root(root or os.getcwd())
         self.allow_write = allow_write
+        configured_roots = _split_path_values(allowed_roots) + _split_path_values([os.environ.get("WORD_AI_ALLOWED_ROOTS", "")])
+        roots = [self.root, *[_normalize_root(p) for p in configured_roots]]
+        self.allowed_roots: list[Path] = []
+        for allowed in roots:
+            if allowed not in self.allowed_roots:
+                self.allowed_roots.append(allowed)
         self.tools: dict[str, Callable[[JSON], Any]] = {
             # Package / health / map
             "docx_health_check": self.tool_docx_health_check,
@@ -160,11 +180,14 @@ class WordAiMcpServer:
         if not path.is_absolute():
             path = self.root / path
         path = path.resolve()
-        try:
-            path.relative_to(self.root)
-        except ValueError:
-            raise PermissionError(f"Path is outside allowed root: {path}")
-        return str(path)
+        for allowed_root in self.allowed_roots:
+            try:
+                path.relative_to(allowed_root)
+                return str(path)
+            except ValueError:
+                continue
+        allowed = ", ".join(str(x) for x in self.allowed_roots)
+        raise PermissionError(f"Path is outside allowed roots: {path}. Allowed roots: {allowed}")
 
     def _maybe_resolve(self, p: str | None) -> str | None:
         return self._resolve_path(p) if p else None
@@ -651,7 +674,7 @@ class WordAiMcpServer:
         req_id = request.get("id")
         try:
             if method == "initialize":
-                result = {"protocolVersion": request.get("params", {}).get("protocolVersion", "2025-11-25"), "serverInfo": {"name": "word-ai-mcp", "version": "0.7.0"}, "capabilities": {"tools": {"listChanged": False}, "resources": {}, "prompts": {}}}
+                result = {"protocolVersion": request.get("params", {}).get("protocolVersion", "2025-11-25"), "serverInfo": {"name": "word-ai-mcp", "version": "0.7.1"}, "capabilities": {"tools": {"listChanged": False}, "resources": {}, "prompts": {}}}
                 return {"jsonrpc": "2.0", "id": req_id, "result": result}
             if method == "notifications/initialized":
                 return None
@@ -674,8 +697,8 @@ class WordAiMcpServer:
             return {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32000, "message": str(exc), "data": {"traceback": traceback.format_exc(limit=8)}}}
 
 
-def run_stdio(root: str | None, allow_write: bool) -> None:
-    server = WordAiMcpServer(root=root, allow_write=allow_write)
+def run_stdio(root: str | None, allow_write: bool, allowed_roots: list[str] | None = None) -> None:
+    server = WordAiMcpServer(root=root, allow_write=allow_write, allowed_roots=allowed_roots)
     for line in sys.stdin:
         line = line.strip()
         if not line:
@@ -692,10 +715,11 @@ def run_stdio(root: str | None, allow_write: bool) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Word AI MCP stdio server")
-    parser.add_argument("--root", default=os.getcwd(), help="Allowed workspace root. All DOCX paths must be inside this directory.")
+    parser.add_argument("--root", default=os.getcwd(), help="Primary workspace root. Relative paths resolve here.")
+    parser.add_argument("--allow-root", action="append", default=[], help="Additional absolute directory allowed for DOCX input/output. Repeatable. WORD_AI_ALLOWED_ROOTS also works.")
     parser.add_argument("--read-only", action="store_true", help="Disable write tools")
     args = parser.parse_args(argv)
-    run_stdio(args.root, allow_write=not args.read_only)
+    run_stdio(args.root, allow_write=not args.read_only, allowed_roots=args.allow_root)
     return 0
 
 

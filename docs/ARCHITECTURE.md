@@ -100,7 +100,7 @@ Codex MCP client
 - 所有 `/office/*` POST 必须携带 `X-Word-AI-Token`。
 - JSON-RPC `/mcp` 写工具也要求 token；读工具保留本地开发可用性。
 - CORS 仅允许 localhost/127.0.0.1 开发源，并支持同源 `/bridge/*` 代理。
-- 路径仍由 MCP root 限制，所有 DOCX 路径必须在 root 内。
+- 路径仍由 MCP root 与显式 `--allow-root` 白名单限制；相对路径在主 root 内解析，绝对路径必须位于某个允许目录内。
 
 ## 3. 内容控件锚点策略
 
