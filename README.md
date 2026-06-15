@@ -17,7 +17,7 @@ AI systems are good at generating text, but Word documents are structured packag
 
 ## Key Features
 
-- **49 MCP tools** for DOCX inspection, anchors, headings, paragraphs, tables, fields, images, comments, revisions, PatchSet planning, dry-run, apply, validation, rollback, and diff.
+- **58 MCP tools** for DOCX inspection, anchors, headings, paragraphs, tables, fields, images, comments, revisions, PatchSet planning, dry-run, apply, validation, rollback, diff, and live Word session editing.
 - **PatchSet-only writes**. No full document rebuilds, no Markdown/HTML round-trips, and no direct source overwrite by default.
 - **Content-control first editing** using stable Word content control tags such as `WORD-AI:SRS:1.0:overview`.
 - **Strong preconditions** with `source_sha256`, `expected_old_sha256`, and `expected_old_text`.
@@ -25,6 +25,7 @@ AI systems are good at generating text, but Word documents are structured packag
 - **Python MCP runtime** for local agent integration.
 - **.NET 8 Open XML SDK engine** for production-grade typed Open XML processing.
 - **Office.js taskpane** for Word-side anchors, PatchSet preview, dry-run, apply, and open-document content-control editing with hash checks.
+- **Live Word session tools** (`word_session_*`) so Codex can read, preview, apply, and roll back edits in the currently open Word document through Office.js.
 - **Local HTTP bridge** secured by a local token and localhost-only CORS for Office add-in workflows.
 
 ## Architecture
@@ -38,12 +39,13 @@ Word AI MCP Server
         +--> Python OOXML engine
         +--> .NET Open XML SDK engine
         +--> Office bridge HTTP API
+        +--> File-backed Word session command queue
         |
         v
 Original DOCX -> PatchSet -> Candidate DOCX -> Validation -> Output DOCX + Audit JSON + Diff
 ```
 
-The Office.js taskpane is the Word session layer. It creates and lists content controls, connects to the local bridge, builds safe PatchSets, runs dry-runs, and applies approved edits.
+The Office.js taskpane is the Word session layer. It creates and lists content controls, connects to the local bridge, registers the current Word document as a live session, polls commands queued by Codex, executes supported PatchSet operations through Office.js, and returns audit/rollback data.
 
 ## Quick Start
 
@@ -97,6 +99,9 @@ Recommended approval policy for write tools:
 - `docx_backup`
 - `docx_restore_backup`
 - `docx_rollback`
+- `word_session_apply_patchset`
+- `word_session_wrap_selection`
+- `word_session_rollback`
 - sidecar export tools
 
 Example prompt:
@@ -105,7 +110,13 @@ Example prompt:
 Use word_ai to inspect examples/sample_contract.docx, list content controls, read WORD-AI:SRS:1.0:overview, and prepare a PatchSet. Run assess and dry-run before applying.
 ```
 
-## Office.js Bridge
+For the currently open Word document, load the Office add-in, connect the bridge, then ask Codex:
+
+```text
+Use word_ai to list active Word sessions, read WORD-AI:SRS:1.0:overview from the live Word session, preview a PatchSet through Office.js, then apply it to the open document and return the audit plus rollback PatchSet.
+```
+
+## Office.js Bridge And Live Word Sessions
 
 Start the local bridge:
 
@@ -124,6 +135,19 @@ npm run dev
 ```
 
 Then sideload `office-addin/manifest.xml` in Word. The taskpane runs at `https://localhost:3000/taskpane.html` and proxies `/bridge/*` to the local bridge. The bridge prints a local token at startup. Use that token in the taskpane.
+
+Once connected inside Word, the taskpane registers a live session under `.wordai/sessions`. Codex can then use:
+
+- `word_session_list`
+- `word_session_snapshot`
+- `word_session_read_content_control`
+- `word_session_preview_patchset`
+- `word_session_apply_patchset`
+- `word_session_wrap_selection`
+- `word_session_rollback`
+- `word_session_command_status`
+
+This path edits the currently open Word document through Office.js. `word_session_apply_patchset` performs a live preflight against the open document, checks `expected_old_sha256`, applies supported content-control operations, returns an audit object, and generates a rollback PatchSet. The offline DOCX path still uses `docx_*` tools and the OOXML/Open XML validator.
 
 ## Safe Editing Workflow
 
@@ -178,7 +202,7 @@ Word AI 是一个开源 MCP Server 与 Office.js Bridge，用于安全、可审�
 
 ## 核心能力
 
-- **49 个 MCP tools**，覆盖 DOCX 检查、锚点、标题、段落、表格、字段、图片、批注、修订、PatchSet 规划、dry-run、正式写入、验证、回滚和 diff。
+- **58 个 MCP tools**，覆盖 DOCX 检查、锚点、标题、段落、表格、字段、图片、批注、修订、PatchSet 规划、dry-run、正式写入、验证、回滚、diff，以及 Word 打开会话内编辑。
 - **所有正式写入收口到 PatchSet**，默认不覆盖源文件。
 - **优先使用内容控件 tag**，例如 `WORD-AI:SRS:1.0:overview`。
 - **并发安全前置条件**：`source_sha256`、`expected_old_sha256`、`expected_old_text`。
@@ -186,6 +210,7 @@ Word AI 是一个开源 MCP Server 与 Office.js Bridge，用于安全、可审�
 - **Python MCP Server**，便于本地 Agent 集成。
 - **.NET 8 Open XML SDK 引擎**，面向生产级 typed Open XML 处理。
 - **Office.js taskpane**，支持创建/列出锚点、构建 PatchSet、预览、dry-run、apply，以及对当前打开的 Word 文档进行 hash 校验后的内容控件写入。
+- **Word 会话 MCP 工具**，Codex 可以通过 `word_session_*` 读取当前打开文档、预览 PatchSet、调用 Office.js 写入并获取审计和 rollback PatchSet。
 
 ## 快速开始
 
@@ -233,6 +258,13 @@ PYTHONPATH = "/absolute/path/to/word-ai"
 ```
 
 推荐将写入类工具设置为需要审批，尤其是 `docx_apply_patchset`、`docx_restore_backup`、`docx_rollback`。
+打开的 Word 文档会话写入也应审批：`word_session_apply_patchset`、`word_session_wrap_selection`、`word_session_rollback`。
+
+对于当前已在 Word 中打开的文档，先加载 Office add-in 并连接 bridge，然后可以让 Codex 使用：
+
+```text
+使用 word_ai 列出 active Word sessions，读取 live session 中 WORD-AI:SRS:1.0:overview 的内容控件文本，先通过 Office.js preview PatchSet，再 apply 到当前打开文档，并返回 audit 与 rollback PatchSet。
+```
 
 ## 标准安全流程
 

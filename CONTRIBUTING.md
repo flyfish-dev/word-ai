@@ -24,6 +24,7 @@ Run these before opening a pull request:
 PYTHONPATH=. python -m compileall word_ai_mcp scripts
 PYTHONPATH=. python scripts/run_smoke_test.py
 PYTHONPATH=. python scripts/run_structure_regression.py
+PYTHONPATH=. python scripts/run_word_session_smoke.py
 PYTHONPATH=. python scripts/run_dotnet_regression.py
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
 
@@ -50,4 +51,3 @@ npm audit --omit=dev --registry=https://registry.npmjs.org --json
 - 写入前必须 assess 和 dry-run。
 - 写入后必须 validate 和 diff。
 - 高风险操作必须带旧文本或旧 hash 前置条件。
-

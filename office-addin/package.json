@@ -9,11 +9,11 @@
     "start": "office-addin-debugging start manifest.xml",
     "stop": "office-addin-debugging stop manifest.xml"
   },
-  "dependencies": {},
   "devDependencies": {
     "@types/office-js": "latest",
+    "office-addin-debugging": "latest",
     "office-addin-dev-certs": "latest",
-    "typescript": "latest",
-    "office-addin-debugging": "latest"
+    "office-addin-manifest": "^2.1.5",
+    "typescript": "latest"
   }
 }

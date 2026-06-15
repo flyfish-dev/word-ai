@@ -57,6 +57,13 @@ from .ooxml import (
     validate_structure,
     write_sidecar_index,
 )
+from .session_store import (
+    enqueue_command,
+    get_command,
+    list_sessions,
+    session_summary,
+    wait_for_command,
+)
 
 JSON = dict[str, Any]
 
@@ -128,6 +135,16 @@ class WordAiMcpServer:
             "docx_validate": self.tool_docx_validate,
             "docx_compare_structure": self.tool_docx_compare_structure,
             "docx_text_diff": self.tool_docx_text_diff,
+            # Live Word / Office.js session tools
+            "word_session_list": self.tool_word_session_list,
+            "word_session_snapshot": self.tool_word_session_snapshot,
+            "word_session_refresh": self.tool_word_session_refresh,
+            "word_session_read_content_control": self.tool_word_session_read_content_control,
+            "word_session_preview_patchset": self.tool_word_session_preview_patchset,
+            "word_session_apply_patchset": self.tool_word_session_apply_patchset,
+            "word_session_wrap_selection": self.tool_word_session_wrap_selection,
+            "word_session_rollback": self.tool_word_session_rollback,
+            "word_session_command_status": self.tool_word_session_command_status,
         }
 
     def _resolve_path(self, p: str) -> str:
@@ -153,6 +170,10 @@ class WordAiMcpServer:
         intp = {"type": "integer", "minimum": 1}
         boolp = {"type": "boolean"}
         patchset = {"$ref": "https://word-ai.local/schemas/patchset.schema.json"}
+        wait_props = {
+            "wait": {"type": "boolean", "default": True},
+            "timeout_seconds": {"type": "number", "default": 20},
+        }
         validate_props = {
             "source_docx": strp,
             "target_docx": strp,
@@ -216,6 +237,15 @@ class WordAiMcpServer:
             ("docx_validate", "Read-only. Validate structural invariants. Supply touched_* for intentional edits.", validate_props, ["source_docx", "target_docx"]),
             ("docx_compare_structure", "Read-only. Same validation report phrased as structural comparison.", validate_props, ["source_docx", "target_docx"]),
             ("docx_text_diff", "Read-only. Unified visible-text diff for human review after validation.", {"source_docx": strp, "target_docx": strp, "context": {"type": "integer", "default": 2}}, ["source_docx", "target_docx"]),
+            ("word_session_list", "Read-only. List active Office.js taskpane sessions registered by an open Word document.", {"include_inactive": {"type": "boolean", "default": False}}, []),
+            ("word_session_snapshot", "Read-only. Return the latest content-control snapshot for an open Word session. If session_id is omitted, uses the most recently active session.", {"session_id": strp}, []),
+            ("word_session_refresh", "Read-only. Ask the Office.js taskpane to refresh its open-document content-control snapshot.", {"session_id": strp, **wait_props}, []),
+            ("word_session_read_content_control", "Read-only. Ask the Office.js taskpane to read content-control text from the currently open Word document by tag.", {"session_id": strp, "tag": strp, **wait_props}, ["tag"]),
+            ("word_session_preview_patchset", "Read-only. Ask the Office.js taskpane to validate and preview a PatchSet against the currently open Word document without modifying it.", {"session_id": strp, "patchset": patchset, **wait_props}, ["patchset"]),
+            ("word_session_apply_patchset", "Write. Apply a supported content-control PatchSet to the currently open Word document through Office.js, with hash preconditions, audit, and rollback PatchSet.", {"session_id": strp, "patchset": patchset, **wait_props}, ["patchset"]),
+            ("word_session_wrap_selection", "Write. Ask the Office.js taskpane to wrap the current Word selection in a content control with a stable tag/title.", {"session_id": strp, "tag": strp, "title": strp, **wait_props}, ["tag"]),
+            ("word_session_rollback", "Write. Roll back a previous word_session_apply_patchset command by applying its generated rollback PatchSet to the open Word document.", {"session_id": strp, "command_id": strp, "rollback_patchset": patchset, **wait_props}, []),
+            ("word_session_command_status", "Read-only. Return the current status/result/error for a queued Office.js session command.", {"command_id": strp}, ["command_id"]),
         ]
         return [{"name": n, "description": d, "inputSchema": _schema(p, r)} for n, d, p, r in specs]
 
@@ -440,12 +470,74 @@ class WordAiMcpServer:
     def tool_docx_text_diff(self, args: JSON) -> Any:
         return diff_text(self._resolve_path(args["source_docx"]), self._resolve_path(args["target_docx"]), int(args.get("context", 2)))
 
+    # Live Word / Office.js session tools.
+    def _active_session_id(self, args: JSON) -> str:
+        if args.get("session_id"):
+            return str(args["session_id"])
+        active = list_sessions(self.root, include_inactive=False)
+        if not active:
+            raise ValueError("No active Word session found. Open the Office.js taskpane, connect the bridge, and keep Word open.")
+        active.sort(key=lambda item: str(item.get("updated_at") or ""), reverse=True)
+        return str(active[0]["session_id"])
+
+    def _enqueue_word_session_command(self, args: JSON, command_type: str, payload: JSON) -> Any:
+        session_id = self._active_session_id(args)
+        command = enqueue_command(self.root, session_id, command_type, payload)
+        if not bool(args.get("wait", True)):
+            return command
+        timeout = float(args.get("timeout_seconds", 20))
+        return wait_for_command(self.root, command["command_id"], timeout_seconds=timeout)
+
+    def tool_word_session_list(self, args: JSON) -> Any:
+        sessions = list_sessions(self.root, bool(args.get("include_inactive", False)))
+        return {"sessions": sessions, "count": len(sessions)}
+
+    def tool_word_session_snapshot(self, args: JSON) -> Any:
+        return session_summary(self.root, self._active_session_id(args))
+
+    def tool_word_session_refresh(self, args: JSON) -> Any:
+        return self._enqueue_word_session_command(args, "list_content_controls", {})
+
+    def tool_word_session_read_content_control(self, args: JSON) -> Any:
+        return self._enqueue_word_session_command(args, "read_content_control", {"tag": args["tag"]})
+
+    def tool_word_session_preview_patchset(self, args: JSON) -> Any:
+        return self._enqueue_word_session_command(args, "preview_patchset", {"patchset": args["patchset"]})
+
+    def tool_word_session_apply_patchset(self, args: JSON) -> Any:
+        self._ensure_write()
+        return self._enqueue_word_session_command(args, "apply_patchset", {"patchset": args["patchset"]})
+
+    def tool_word_session_wrap_selection(self, args: JSON) -> Any:
+        self._ensure_write()
+        return self._enqueue_word_session_command(args, "wrap_selection", {"tag": args["tag"], "title": args.get("title")})
+
+    def tool_word_session_rollback(self, args: JSON) -> Any:
+        self._ensure_write()
+        rollback_patchset = args.get("rollback_patchset")
+        source_command_id = args.get("command_id")
+        if rollback_patchset is None:
+            if not source_command_id:
+                raise ValueError("word_session_rollback requires command_id or rollback_patchset")
+            source = get_command(self.root, str(source_command_id))
+            rollback_patchset = ((source.get("result") or {}).get("audit") or {}).get("rollback_patchset") or (source.get("result") or {}).get("rollback_patchset")
+        if not rollback_patchset:
+            raise ValueError("No rollback_patchset found for the requested command")
+        return self._enqueue_word_session_command(
+            args,
+            "apply_patchset",
+            {"patchset": rollback_patchset, "rollback_of_command_id": source_command_id},
+        )
+
+    def tool_word_session_command_status(self, args: JSON) -> Any:
+        return get_command(self.root, args["command_id"])
+
     def handle(self, request: JSON) -> JSON | None:
         method = request.get("method")
         req_id = request.get("id")
         try:
             if method == "initialize":
-                result = {"protocolVersion": request.get("params", {}).get("protocolVersion", "2025-11-25"), "serverInfo": {"name": "word-ai-mcp", "version": "0.5.0"}, "capabilities": {"tools": {"listChanged": False}, "resources": {}, "prompts": {}}}
+                result = {"protocolVersion": request.get("params", {}).get("protocolVersion", "2025-11-25"), "serverInfo": {"name": "word-ai-mcp", "version": "0.6.0"}, "capabilities": {"tools": {"listChanged": False}, "resources": {}, "prompts": {}}}
                 return {"jsonrpc": "2.0", "id": req_id, "result": result}
             if method == "notifications/initialized":
                 return None

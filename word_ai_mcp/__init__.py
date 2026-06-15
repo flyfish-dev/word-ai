@@ -4,4 +4,4 @@ This package provides a conservative DOCX editing MCP server designed for AI age
 It performs targeted OOXML edits instead of rebuilding whole Word documents.
 """
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"

@@ -1,6 +1,6 @@
-# Codex Tool Catalog v0.4
+# Codex Tool Catalog v0.6
 
-本文件由 `word_ai_mcp.server` 的 `tools/list` 生成，当前可发现工具数：**49**。
+本文件由 `word_ai_mcp.server` 的 `tools/list` 生成，当前可发现工具数：**58**。
 
 ## 工具列表
 
@@ -53,3 +53,12 @@
 47. `docx_validate` — Read-only. Validate structural invariants. Supply touched_* for intentional edits.
 48. `docx_compare_structure` — Read-only. Same validation report phrased as structural comparison.
 49. `docx_text_diff` — Read-only. Unified visible-text diff for human review after validation.
+50. `word_session_list` — Read-only. List active Office.js taskpane sessions registered by an open Word document.
+51. `word_session_snapshot` — Read-only. Return the latest content-control snapshot for an open Word session. If session_id is omitted, uses the most recently active session.
+52. `word_session_refresh` — Read-only. Ask the Office.js taskpane to refresh its open-document content-control snapshot.
+53. `word_session_read_content_control` — Read-only. Ask the Office.js taskpane to read content-control text from the currently open Word document by tag.
+54. `word_session_preview_patchset` — Read-only. Ask the Office.js taskpane to validate and preview a PatchSet against the currently open Word document without modifying it.
+55. `word_session_apply_patchset` — Write. Apply a supported content-control PatchSet to the currently open Word document through Office.js, with hash preconditions, audit, and rollback PatchSet.
+56. `word_session_wrap_selection` — Write. Ask the Office.js taskpane to wrap the current Word selection in a content control with a stable tag/title.
+57. `word_session_rollback` — Write. Roll back a previous word_session_apply_patchset command by applying its generated rollback PatchSet to the open Word document.
+58. `word_session_command_status` — Read-only. Return the current status/result/error for a queued Office.js session command.

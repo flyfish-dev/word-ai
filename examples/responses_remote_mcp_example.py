@@ -17,8 +17,28 @@ resp = client.responses.create(
             "server_label": "word_ai",
             "server_url": "https://your-word-ai-mcp.example.com/mcp",
             "require_approval": {
-                "always": {"tool_names": ["docx_apply_patchset", "docx_backup"]},
-                "never": {"tool_names": ["docx_inspect", "docx_list_anchors", "docx_read_content_control", "docx_validate", "docx_text_diff"]},
+                "always": {
+                    "tool_names": [
+                        "docx_apply_patchset",
+                        "docx_backup",
+                        "word_session_apply_patchset",
+                        "word_session_wrap_selection",
+                        "word_session_rollback",
+                    ]
+                },
+                "never": {
+                    "tool_names": [
+                        "docx_inspect",
+                        "docx_list_anchors",
+                        "docx_read_content_control",
+                        "docx_validate",
+                        "docx_text_diff",
+                        "word_session_list",
+                        "word_session_snapshot",
+                        "word_session_read_content_control",
+                        "word_session_preview_patchset",
+                    ]
+                },
             },
             "allowed_tools": [
                 "docx_inspect",
@@ -28,6 +48,13 @@ resp = client.responses.create(
                 "docx_text_diff",
                 "docx_backup",
                 "docx_apply_patchset",
+                "word_session_list",
+                "word_session_snapshot",
+                "word_session_read_content_control",
+                "word_session_preview_patchset",
+                "word_session_apply_patchset",
+                "word_session_wrap_selection",
+                "word_session_rollback",
             ],
         }
     ],

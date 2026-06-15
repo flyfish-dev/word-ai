@@ -9,6 +9,7 @@ Word AI is not a document generator. It is a document transaction system for AI-
 - Keep writes constrained to explicit anchors.
 - Make every write auditable, reversible, and structurally validated.
 - Give agents rich read tools while forcing formal writes through PatchSet.
+- Support both offline DOCX file transactions and live Word session edits through Office.js.
 
 ## Components
 
@@ -18,12 +19,13 @@ Codex, OpenAI Agents, or another MCP client reads document structure, identifies
 
 ### MCP Server
 
-The Python MCP server exposes 49 tools:
+The Python MCP server exposes 58 tools:
 
 - package inspection and health checks
 - heading, paragraph, bookmark, and content-control navigation
 - table, style, numbering, field, image, hyperlink, comment, note, and revision inspection
 - PatchSet assessment, dry-run, backup, apply, validation, rollback, and diff
+- live Word session listing, snapshot, content-control reads, PatchSet preview/apply, selection wrapping, rollback, and command status
 
 All paths are scoped to the configured root directory.
 
@@ -51,7 +53,10 @@ The Word add-in is the session layer:
 - list open-document content controls
 - connect to the local Office bridge
 - build, assess, dry-run, and apply PatchSets
-- apply supported operations to the currently open Word document after SHA-256 precondition checks
+- register the currently open Word document as a live session
+- poll queued Codex commands from the local bridge
+- apply supported operations to the currently open Word document after a live preflight and SHA-256 precondition checks
+- return an audit object and rollback PatchSet for live session writes
 
 ### Office Bridge
 
@@ -68,8 +73,25 @@ Bridge endpoints:
 - `/office/assess-patchset`
 - `/office/preview-patchset`
 - `/office/apply-patchset`
+- `/office/session/register`
+- `/office/session/heartbeat`
+- `/office/session/poll`
+- `/office/session/result`
+- `/office/session/list`
 
 All `/office/*` POST requests require a local token.
+
+Live Word session flow:
+
+```text
+Codex MCP client
+  -> word_session_* tool
+  -> .wordai/sessions/commands/*.json
+  -> Office.js taskpane polling loop
+  -> Word.run(...)
+  -> /office/session/result
+  -> Codex receives audit / rollback / error
+```
 
 ## PatchSet Lifecycle
 
@@ -85,6 +107,8 @@ Source DOCX
   -> write audit JSON
   -> compare structure and text diff
 ```
+
+Live Word session writes use the same PatchSet shape but do not create a new DOCX file. They target the document currently open in Word and are limited to content-control text operations. `word_session_apply_patchset` performs a live preflight first, re-checks `expected_old_sha256`, applies through Office.js, and returns audit plus rollback PatchSet.
 
 ## Safety Boundaries
 
@@ -104,4 +128,3 @@ Word AI blocks or reports risk for:
 - Use render/PDF diff for release-grade validation.
 - Use Word COM, Aspose, or Syncfusion for field refresh and PDF export where Office.js APIs are insufficient.
 - Put write tools behind human approval, RBAC, audit logging, and network controls.
-

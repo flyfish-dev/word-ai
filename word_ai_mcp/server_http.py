@@ -11,6 +11,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from .server import WordAiMcpServer
+from .session_store import claim_pending_commands, complete_command, list_sessions, register_session, update_session
 
 WRITE_TOOLS = {
     "docx_export_plain_text",
@@ -23,6 +24,9 @@ WRITE_TOOLS = {
     "docx_restore_backup",
     "docx_rollback",
     "docx_apply_patchset",
+    "word_session_apply_patchset",
+    "word_session_wrap_selection",
+    "word_session_rollback",
 }
 
 CONTENT_CONTROL_OPS = {
@@ -83,7 +87,7 @@ def make_handler(root: str, allow_write: bool, token: str):
     }
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = "WordAiMcpHTTP/0.5"
+        server_version = "WordAiMcpHTTP/0.6"
 
         def log_message(self, fmt: str, *args: Any) -> None:
             print("%s - - [%s] %s" % (self.client_address[0], self.log_date_time_string(), fmt % args))
@@ -272,6 +276,11 @@ def make_handler(root: str, allow_write: bool, token: str):
                             "/office/assess-patchset",
                             "/office/preview-patchset",
                             "/office/apply-patchset",
+                            "/office/session/register",
+                            "/office/session/heartbeat",
+                            "/office/session/poll",
+                            "/office/session/result",
+                            "/office/session/list",
                         ],
                     },
                 )
@@ -305,6 +314,28 @@ def make_handler(root: str, allow_write: bool, token: str):
                     self._send_json(200, self._preview_patchset(body))
                 elif path == "/office/apply-patchset":
                     self._send_json(200, self._apply_patchset(body))
+                elif path == "/office/session/register":
+                    self._send_json(200, {"ok": True, "session": register_session(root, body)})
+                elif path == "/office/session/heartbeat":
+                    self._send_json(200, {"ok": True, "session": update_session(root, str(body["session_id"]), body)})
+                elif path == "/office/session/poll":
+                    commands = claim_pending_commands(root, str(body["session_id"]), int(body.get("limit", 5)))
+                    self._send_json(200, {"ok": True, "commands": commands, "count": len(commands)})
+                elif path == "/office/session/result":
+                    command = complete_command(
+                        root,
+                        str(body["session_id"]),
+                        str(body["command_id"]),
+                        result=body.get("result"),
+                        error=body.get("error"),
+                    )
+                    snapshot = body.get("snapshot")
+                    if isinstance(snapshot, dict):
+                        update_session(root, str(body["session_id"]), snapshot)
+                    self._send_json(200, {"ok": True, "command": command})
+                elif path == "/office/session/list":
+                    sessions = list_sessions(root, bool(body.get("include_inactive", False)))
+                    self._send_json(200, {"ok": True, "sessions": sessions, "count": len(sessions)})
                 else:
                     self._send_json(404, {"ok": False, "error": "not found"})
             except KeyError as exc:

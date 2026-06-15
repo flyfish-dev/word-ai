@@ -8,3 +8,42 @@ startup_timeout_sec = 30
 
 [mcp_servers.word_ai.env]
 PYTHONPATH = "/absolute/path/to/word-ai"
+
+[mcp_servers.word_ai.tools.docx_export_plain_text]
+approval_mode = "approve"
+
+[mcp_servers.word_ai.tools.docx_export_table_csv]
+approval_mode = "approve"
+
+[mcp_servers.word_ai.tools.docx_table_to_csv]
+approval_mode = "approve"
+
+[mcp_servers.word_ai.tools.docx_preflight_patchset]
+approval_mode = "approve"
+
+[mcp_servers.word_ai.tools.docx_dry_run_patchset]
+approval_mode = "approve"
+
+[mcp_servers.word_ai.tools.docx_write_index]
+approval_mode = "approve"
+
+[mcp_servers.word_ai.tools.docx_backup]
+approval_mode = "approve"
+
+[mcp_servers.word_ai.tools.docx_restore_backup]
+approval_mode = "approve"
+
+[mcp_servers.word_ai.tools.docx_rollback]
+approval_mode = "approve"
+
+[mcp_servers.word_ai.tools.docx_apply_patchset]
+approval_mode = "approve"
+
+[mcp_servers.word_ai.tools.word_session_apply_patchset]
+approval_mode = "approve"
+
+[mcp_servers.word_ai.tools.word_session_wrap_selection]
+approval_mode = "approve"
+
+[mcp_servers.word_ai.tools.word_session_rollback]
+approval_mode = "approve"

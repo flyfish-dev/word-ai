@@ -1,4 +1,4 @@
-# QA Report — v0.5 Local Verification
+# QA Report — v0.6 Local Verification
 
 Verification date: 2026-06-15.
 
@@ -18,6 +18,7 @@ Executed locally from the project root:
 python -m compileall word_ai_mcp scripts
 PYTHONPATH=. python scripts/run_smoke_test.py
 PYTHONPATH=. python scripts/run_structure_regression.py
+PYTHONPATH=. python scripts/run_word_session_smoke.py
 PYTHONPATH=. python scripts/run_dotnet_regression.py
 PYTHONPATH=. python scripts/run_office_bridge_smoke.py
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
@@ -28,13 +29,15 @@ Results:
 - Python compilation: passed.
 - Smoke test: passed.
 - Structure regression: passed.
+- Word session command-queue smoke: passed.
 - .NET build: passed with 0 warnings and 0 errors.
 - .NET PatchSet regression: passed.
 - Office bridge smoke: passed.
-- Advertised MCP tools: 49.
+- Advertised MCP tools: 58.
 - Stdio MCP handshake and `tools/list`: passed.
 - Basic HTTP adapter `/health` and `/mcp tools/list`: passed on `127.0.0.1:8765`.
 - Office bridge endpoints verified through smoke: `/office/read`, `/office/build-patchset`, `/office/assess-patchset`, `/office/preview-patchset`, `/office/apply-patchset`.
+- Live Word session queue endpoints verified through smoke: session register, queued command claim, command completion, command status, apply command enqueue, rollback command enqueue.
 
 ## Structural Validation Evidence
 
@@ -133,6 +136,14 @@ Automated smoke:
 - Final validation: `ok=true`, changed parts include `word/document.xml`.
 - JSON-RPC `/mcp` write tool without token: rejected with `401`.
 
+Word session smoke:
+
+- A mock Office.js taskpane session was registered under `.wordai/sessions`.
+- `word_session_list` and `word_session_snapshot` returned the active open-document snapshot.
+- `word_session_refresh` queued a command and `word_session_command_status` observed completion.
+- `word_session_apply_patchset` queued a live apply command for a content-control PatchSet.
+- `word_session_rollback` loaded the apply command's generated rollback PatchSet and queued the rollback command.
+
 Browser verification against `http://localhost:3000/taskpane.html`:
 
 - Page loaded with no console errors or warnings.
@@ -144,6 +155,6 @@ Browser verification against `http://localhost:3000/taskpane.html`:
 ## Not Covered In This Pass
 
 - Automated Word rendering / visual diff: not run in this environment.
-- Word desktop sideload and true Office.js host operations (`Wrap`, `List Open`, `Apply Open`) were not automated in this browser-only pass.
+- Word desktop sideload and true Office.js host operations (`Wrap`, `List Open`, `Apply Open`, `word_session_apply_patchset`) were not fully automated in this browser-only pass. The TypeScript host code compiles, and the local queue protocol is covered by smoke tests; a real Word host is still required to execute `Word.run(...)`.
 - HTTPS dev server certificate flow (`npm run dev`) was not exercised because the automated check used `npm run dev:http`; manifest HTTPS validation passed.
 - True MCP Streamable HTTP compatibility: current HTTP adapter is a basic local JSON-RPC adapter, not a production remote MCP transport.

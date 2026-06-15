@@ -19,8 +19,12 @@ SAFE_READ_TOOLS = [
     "docx_write_index",
     "docx_text_diff",
     "docx_validate",
+    "word_session_list",
+    "word_session_snapshot",
+    "word_session_read_content_control",
+    "word_session_preview_patchset",
 ]
-WRITE_TOOLS = ["docx_backup", "docx_apply_patchset"]
+WRITE_TOOLS = ["docx_backup", "docx_apply_patchset", "word_session_apply_patchset", "word_session_wrap_selection", "word_session_rollback"]
 
 
 async def main() -> None:
