@@ -25,7 +25,7 @@
 
 职责：
 
-- 暴露 58 个分层工具：丰富读取与定位能力，正式写入统一收口到 PatchSet。
+- 暴露 63 个分层工具：丰富读取与定位能力，正式写入统一收口到 PatchSet。
 - 限制文件根目录。
 - 校验 JSON Schema。
 - 默认不覆盖原文档。
@@ -40,6 +40,7 @@
 - Write tools：`docx_backup`、`docx_apply_patchset`、`docx_restore_backup`、`docx_rollback`。
 - Verify tools：`docx_validate`、`docx_compare_structure`、`docx_text_diff`。
 - Word session tools：`word_session_list`、`word_session_read_content_control`、`word_session_preview_patchset`、`word_session_apply_patchset`、`word_session_rollback`。
+- OfficeCLI auxiliary tools：`officecli_view_html`、`officecli_view_screenshot`、`officecli_view_issues`、`officecli_query`、`officecli_validate`，仅作为只读/低风险证据，不作为默认写入后端。
 
 ### 2.3 Open XML SDK 内核
 

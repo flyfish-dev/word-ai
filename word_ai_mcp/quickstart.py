@@ -1,0 +1,161 @@
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any
+
+
+WRITE_APPROVAL_TOOLS = [
+    "docx_export_plain_text",
+    "docx_export_table_csv",
+    "docx_table_to_csv",
+    "docx_preflight_patchset",
+    "docx_dry_run_patchset",
+    "docx_write_index",
+    "docx_backup",
+    "docx_restore_backup",
+    "docx_rollback",
+    "docx_apply_patchset",
+    "word_session_apply_patchset",
+    "word_session_wrap_selection",
+    "word_session_rollback",
+    "officecli_view_screenshot",
+]
+
+
+def repo_root(value: str | None = None) -> Path:
+    if value:
+        return Path(value).expanduser().resolve()
+    return Path(__file__).resolve().parent.parent
+
+
+def preferred_python(root: Path) -> Path:
+    if os.name == "nt":
+        candidate = root / ".venv" / "Scripts" / "python.exe"
+    else:
+        candidate = root / ".venv" / "bin" / "python"
+    return candidate if candidate.exists() else Path(sys.executable).resolve()
+
+
+def toml_string(value: str) -> str:
+    return json.dumps(value)
+
+
+def build_codex_config(root: Path, server_name: str = "word_ai") -> str:
+    python_path = preferred_python(root)
+    lines = [
+        f"[mcp_servers.{server_name}]",
+        f"command = {toml_string(str(python_path))}",
+        f"args = [\"-m\", \"word_ai_mcp.server\", \"--root\", {toml_string(str(root))}]",
+        "enabled = true",
+        "startup_timeout_sec = 30",
+        "",
+        f"[mcp_servers.{server_name}.env]",
+        f"PYTHONPATH = {toml_string(str(root))}",
+        "",
+    ]
+    for tool in WRITE_APPROVAL_TOOLS:
+        lines.extend(
+            [
+                f"[mcp_servers.{server_name}.tools.{tool}]",
+                'approval_mode = "approve"',
+                "",
+            ]
+        )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def command_version(command: list[str], cwd: Path | None = None) -> str | None:
+    try:
+        proc = subprocess.run(command, cwd=str(cwd) if cwd else None, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=12)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0:
+        return None
+    return proc.stdout.strip().splitlines()[0] if proc.stdout.strip() else "ok"
+
+
+def doctor(root: Path) -> int:
+    checks: list[tuple[str, bool, str]] = []
+    checks.append(("python", sys.version_info >= (3, 10), sys.version.split()[0]))
+    for module_name in ["lxml", "docx"]:
+        try:
+            __import__(module_name)
+            checks.append((module_name, True, "installed"))
+        except Exception as exc:
+            checks.append((module_name, False, str(exc)))
+
+    node = command_version(["node", "--version"])
+    npm = command_version(["npm", "--version"])
+    dotnet = command_version(["dotnet", "--version"])
+    officecli = command_version(["officecli", "--version"])
+    checks.extend(
+        [
+            ("node", node is not None, node or "not found"),
+            ("npm", npm is not None, npm or "not found"),
+            ("dotnet", dotnet is not None, dotnet or "not found"),
+            ("office-addin package", (root / "office-addin" / "package.json").exists(), "office-addin/package.json"),
+            (
+                "office-addin node_modules",
+                (root / "office-addin" / "node_modules").exists(),
+                "office-addin/node_modules" if (root / "office-addin" / "node_modules").exists() else "run scripts/install.sh if missing",
+            ),
+            ("sample docx", (root / "examples" / "sample_contract.docx").exists(), "examples/sample_contract.docx"),
+        ]
+    )
+    optional_checks = [("officecli", officecli is not None, officecli or "not installed; optional auxiliary backend")]
+
+    width = max(len(name) for name, _, _ in checks + optional_checks)
+    ok = True
+    for name, passed, detail in checks:
+        ok = ok and passed
+        status = "OK" if passed else "MISSING"
+        print(f"{status:7} {name:<{width}} {detail}")
+    for name, passed, detail in optional_checks:
+        status = "OK" if passed else "OPTION"
+        print(f"{status:7} {name:<{width}} {detail}")
+
+    print()
+    print(f"Repo root: {root}")
+    print(f"Python for Codex: {preferred_python(root)}")
+    print(f"Codex config snippet: {root / '.wordai' / 'codex-config.toml'}")
+    return 0 if ok else 1
+
+
+def write_codex_config(root: Path, server_name: str, output: str | None) -> int:
+    text = build_codex_config(root, server_name)
+    if output:
+        out = Path(output).expanduser()
+        if not out.is_absolute():
+            out = root / out
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text, encoding="utf-8")
+        print(f"Wrote {out}")
+    else:
+        print(text, end="")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Word AI quickstart helpers.")
+    parser.add_argument("--root", default=None, help="Repository root. Defaults to this package's repository.")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    doctor_parser = sub.add_parser("doctor", help="Check local runtime readiness.")
+    doctor_parser.set_defaults(func=lambda args: doctor(repo_root(args.root)))
+
+    config_parser = sub.add_parser("codex-config", help="Print or write a Codex MCP config snippet.")
+    config_parser.add_argument("--server-name", default="word_ai")
+    config_parser.add_argument("--output", default=None)
+    config_parser.set_defaults(func=lambda args: write_codex_config(repo_root(args.root), args.server_name, args.output))
+
+    args = parser.parse_args(argv)
+    return int(args.func(args))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,4 +1,4 @@
-# QA Report — v0.6 Local Verification
+# QA Report — v0.7 Local Verification
 
 Verification date: 2026-06-15.
 
@@ -21,7 +21,10 @@ PYTHONPATH=. python scripts/run_structure_regression.py
 PYTHONPATH=. python scripts/run_word_session_smoke.py
 PYTHONPATH=. python scripts/run_dotnet_regression.py
 PYTHONPATH=. python scripts/run_office_bridge_smoke.py
+PYTHONPATH=. python scripts/validate_word_ai_skill.py
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
+bash scripts/install.sh --install-skill
+WORD_AI_BRIDGE_PORT=8876 WORD_AI_TASKPANE_PORT=3100 bash scripts/start.sh --http
 ```
 
 Results:
@@ -33,11 +36,15 @@ Results:
 - .NET build: passed with 0 warnings and 0 errors.
 - .NET PatchSet regression: passed.
 - Office bridge smoke: passed.
-- Advertised MCP tools: 58.
+- Word AI Skill validation: passed.
+- One-command install script: passed.
+- One-command start script: passed on alternate ports `8876` and `3100`.
+- Advertised MCP tools: 63.
 - Stdio MCP handshake and `tools/list`: passed.
 - Basic HTTP adapter `/health` and `/mcp tools/list`: passed on `127.0.0.1:8765`.
 - Office bridge endpoints verified through smoke: `/office/read`, `/office/build-patchset`, `/office/assess-patchset`, `/office/preview-patchset`, `/office/apply-patchset`.
 - Live Word session queue endpoints verified through smoke: session register, queued command claim, command completion, command status, apply command enqueue, rollback command enqueue.
+- Optional OfficeCLI wrappers are present as allowlisted tools: `officecli_view_html`, `officecli_view_screenshot`, `officecli_view_issues`, `officecli_query`, `officecli_validate`.
 
 ## Structural Validation Evidence
 

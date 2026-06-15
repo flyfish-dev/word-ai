@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "word-ai"
-version = "0.6.0"
+version = "0.7.0"
 description = "Structure-preserving Word DOCX editing MCP server and Office.js bridge for AI agents"
 requires-python = ">=3.10"
 dependencies = ["lxml>=4.9", "python-docx>=1.1.0"]
@@ -12,6 +12,7 @@ readme = "README.md"
 license = {text = "MIT"}
 
 [project.scripts]
+word-ai = "word_ai_mcp.quickstart:main"
 word-ai-mcp = "word_ai_mcp.server:main"
 
 [tool.setuptools.packages.find]

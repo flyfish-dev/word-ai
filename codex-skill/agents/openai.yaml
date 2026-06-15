@@ -1,0 +1,4 @@
+interface:
+  display_name: "Word AI"
+  short_description: "Safe Word DOCX editing through Word AI MCP"
+  default_prompt: "Use Word AI to inspect a DOCX, choose offline or live Word session mode, prepare a guarded PatchSet, validate, and report audit plus diff."

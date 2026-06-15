@@ -27,6 +27,7 @@ WRITE_TOOLS = {
     "word_session_apply_patchset",
     "word_session_wrap_selection",
     "word_session_rollback",
+    "officecli_view_screenshot",
 }
 
 CONTENT_CONTROL_OPS = {
@@ -87,7 +88,7 @@ def make_handler(root: str, allow_write: bool, token: str):
     }
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = "WordAiMcpHTTP/0.6"
+        server_version = "WordAiMcpHTTP/0.7"
 
         def log_message(self, fmt: str, *args: Any) -> None:
             print("%s - - [%s] %s" % (self.client_address[0], self.log_date_time_string(), fmt % args))

@@ -34,6 +34,25 @@ jobs:
           PYTHONPATH=. python scripts/run_smoke_test.py
           PYTHONPATH=. python scripts/run_structure_regression.py
           PYTHONPATH=. python scripts/run_word_session_smoke.py
+          PYTHONPATH=. python scripts/validate_word_ai_skill.py
+          PYTHONPATH=. python - <<'PY'
+          from word_ai_mcp.server import WordAiMcpServer
+          tools = {tool['name'] for tool in WordAiMcpServer(root='.').list_tools()}
+          assert len(tools) == 63
+          for name in ['officecli_view_html', 'officecli_view_screenshot', 'officecli_view_issues', 'officecli_query', 'officecli_validate']:
+              assert name in tools
+          print('tool surface validation passed')
+          PY
+          PYTHONPATH=. python -m word_ai_mcp.quickstart --root "$PWD" codex-config --output /tmp/word-ai-codex.toml
+          python - <<'PY'
+          import tomllib
+          with open('/tmp/word-ai-codex.toml', 'rb') as fh:
+              data = tomllib.load(fh)
+          tools = data['mcp_servers']['word_ai']['tools']
+          for name in ['docx_apply_patchset', 'word_session_apply_patchset', 'word_session_rollback', 'officecli_view_screenshot']:
+              assert tools[name]['approval_mode'] == 'approve'
+          print('codex config validation passed')
+          PY
 
       - name: .NET checks
         run: |

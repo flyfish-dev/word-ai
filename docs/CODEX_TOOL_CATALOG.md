@@ -1,6 +1,6 @@
-# Codex Tool Catalog v0.6
+# Codex Tool Catalog v0.7
 
-本文件由 `word_ai_mcp.server` 的 `tools/list` 生成，当前可发现工具数：**58**。
+本文件由 `word_ai_mcp.server` 的 `tools/list` 生成，当前可发现工具数：**63**。
 
 ## 工具列表
 
@@ -62,3 +62,8 @@
 56. `word_session_wrap_selection` — Write. Ask the Office.js taskpane to wrap the current Word selection in a content control with a stable tag/title.
 57. `word_session_rollback` — Write. Roll back a previous word_session_apply_patchset command by applying its generated rollback PatchSet to the open Word document.
 58. `word_session_command_status` — Read-only. Return the current status/result/error for a queued Office.js session command.
+59. `officecli_view_html` — Optional OfficeCLI auxiliary read. Render a DOCX to a bounded HTML snapshot for visual evidence. Does not modify the DOCX.
+60. `officecli_view_screenshot` — Optional OfficeCLI auxiliary sidecar export. Render a DOCX screenshot/PNG to output_path. Does not modify the DOCX.
+61. `officecli_view_issues` — Optional OfficeCLI auxiliary read. Run view issues with JSON output for formatting/content/structure evidence.
+62. `officecli_query` — Optional OfficeCLI auxiliary read. Run CSS-like query with --json. Use only for inspection, never mutation.
+63. `officecli_validate` — Optional OfficeCLI auxiliary read. Validate the DOCX with OfficeCLI --json as extra evidence after Word AI validation.

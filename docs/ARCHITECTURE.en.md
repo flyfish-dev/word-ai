@@ -19,13 +19,14 @@ Codex, OpenAI Agents, or another MCP client reads document structure, identifies
 
 ### MCP Server
 
-The Python MCP server exposes 58 tools:
+The Python MCP server exposes 63 tools:
 
 - package inspection and health checks
 - heading, paragraph, bookmark, and content-control navigation
 - table, style, numbering, field, image, hyperlink, comment, note, and revision inspection
 - PatchSet assessment, dry-run, backup, apply, validation, rollback, and diff
 - live Word session listing, snapshot, content-control reads, PatchSet preview/apply, selection wrapping, rollback, and command status
+- optional OfficeCLI auxiliary evidence: HTML rendering, screenshot sidecar export, issues, query, and validation
 
 All paths are scoped to the configured root directory.
 

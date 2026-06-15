@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
+import subprocess
 import sys
 import traceback
 from pathlib import Path
@@ -145,6 +147,12 @@ class WordAiMcpServer:
             "word_session_wrap_selection": self.tool_word_session_wrap_selection,
             "word_session_rollback": self.tool_word_session_rollback,
             "word_session_command_status": self.tool_word_session_command_status,
+            # Optional OfficeCLI read-only / low-risk auxiliary evidence.
+            "officecli_view_html": self.tool_officecli_view_html,
+            "officecli_view_screenshot": self.tool_officecli_view_screenshot,
+            "officecli_view_issues": self.tool_officecli_view_issues,
+            "officecli_query": self.tool_officecli_query,
+            "officecli_validate": self.tool_officecli_validate,
         }
 
     def _resolve_path(self, p: str) -> str:
@@ -246,6 +254,11 @@ class WordAiMcpServer:
             ("word_session_wrap_selection", "Write. Ask the Office.js taskpane to wrap the current Word selection in a content control with a stable tag/title.", {"session_id": strp, "tag": strp, "title": strp, **wait_props}, ["tag"]),
             ("word_session_rollback", "Write. Roll back a previous word_session_apply_patchset command by applying its generated rollback PatchSet to the open Word document.", {"session_id": strp, "command_id": strp, "rollback_patchset": patchset, **wait_props}, []),
             ("word_session_command_status", "Read-only. Return the current status/result/error for a queued Office.js session command.", {"command_id": strp}, ["command_id"]),
+            ("officecli_view_html", "Optional OfficeCLI auxiliary read. Render a DOCX to a bounded HTML snapshot for visual evidence. Does not modify the DOCX.", {"docx_path": strp, "page": {"type": "integer", "minimum": 1}, "max_output_chars": {"type": "integer", "default": 50000}}, ["docx_path"]),
+            ("officecli_view_screenshot", "Optional OfficeCLI auxiliary sidecar export. Render a DOCX screenshot/PNG to output_path. Does not modify the DOCX.", {"docx_path": strp, "output_path": strp, "page": {"type": "integer", "minimum": 1}, "screenshot_width": {"type": "integer", "minimum": 320}, "screenshot_height": {"type": "integer", "minimum": 320}, "max_output_chars": {"type": "integer", "default": 20000}}, ["docx_path", "output_path"]),
+            ("officecli_view_issues", "Optional OfficeCLI auxiliary read. Run view issues with JSON output for formatting/content/structure evidence.", {"docx_path": strp, "issue_type": {"type": "string", "enum": ["format", "content", "structure"]}, "limit": {"type": "integer", "minimum": 1}, "max_output_chars": {"type": "integer", "default": 50000}}, ["docx_path"]),
+            ("officecli_query", "Optional OfficeCLI auxiliary read. Run CSS-like query with --json. Use only for inspection, never mutation.", {"docx_path": strp, "selector": strp, "max_output_chars": {"type": "integer", "default": 50000}}, ["docx_path", "selector"]),
+            ("officecli_validate", "Optional OfficeCLI auxiliary read. Validate the DOCX with OfficeCLI --json as extra evidence after Word AI validation.", {"docx_path": strp, "max_output_chars": {"type": "integer", "default": 50000}}, ["docx_path"]),
         ]
         return [{"name": n, "description": d, "inputSchema": _schema(p, r)} for n, d, p, r in specs]
 
@@ -470,6 +483,107 @@ class WordAiMcpServer:
     def tool_docx_text_diff(self, args: JSON) -> Any:
         return diff_text(self._resolve_path(args["source_docx"]), self._resolve_path(args["target_docx"]), int(args.get("context", 2)))
 
+    # Optional OfficeCLI auxiliary backend. These wrappers intentionally expose
+    # only read-only / low-risk commands and never accept raw OfficeCLI args.
+    def _officecli_path(self) -> str | None:
+        configured = os.environ.get("WORD_AI_OFFICECLI")
+        if configured:
+            return configured
+        return shutil.which("officecli")
+
+    def _run_officecli(self, argv: list[str], max_output_chars: int = 50000, timeout_seconds: int = 90) -> Any:
+        exe = self._officecli_path()
+        if not exe:
+            return {
+                "ok": False,
+                "available": False,
+                "error": "officecli not found. Install OfficeCLI only if you want optional render/query/validate evidence.",
+                "allowed_commands": [
+                    "view html",
+                    "view screenshot",
+                    "view issues",
+                    "query --json",
+                    "validate --json",
+                ],
+            }
+        try:
+            proc = subprocess.run(
+                [exe, *argv],
+                cwd=str(self.root),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                errors="replace",
+                timeout=timeout_seconds,
+            )
+        except subprocess.TimeoutExpired as exc:
+            return {"ok": False, "available": True, "error": f"officecli timed out after {timeout_seconds}s", "stdout": exc.stdout, "stderr": exc.stderr}
+
+        stdout = proc.stdout or ""
+        stderr = proc.stderr or ""
+        stdout_truncated = len(stdout) > max_output_chars
+        stderr_truncated = len(stderr) > max_output_chars
+        stdout_out = stdout[:max_output_chars]
+        stderr_out = stderr[:max_output_chars]
+        parsed = None
+        if stdout_out.strip():
+            try:
+                parsed = json.loads(stdout_out)
+            except json.JSONDecodeError:
+                parsed = None
+        return {
+            "ok": proc.returncode == 0,
+            "available": True,
+            "command": ["officecli", *argv],
+            "returncode": proc.returncode,
+            "stdout": stdout_out,
+            "stderr": stderr_out,
+            "stdout_truncated": stdout_truncated,
+            "stderr_truncated": stderr_truncated,
+            "json": parsed,
+        }
+
+    def tool_officecli_view_html(self, args: JSON) -> Any:
+        docx_path = self._resolve_path(args["docx_path"])
+        cmd = ["view", docx_path, "html"]
+        if args.get("page"):
+            cmd.extend(["--page", str(int(args["page"]))])
+        return self._run_officecli(cmd, int(args.get("max_output_chars", 50000)))
+
+    def tool_officecli_view_screenshot(self, args: JSON) -> Any:
+        self._ensure_write()
+        docx_path = self._resolve_path(args["docx_path"])
+        output_path = self._resolve_path(args["output_path"])
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        cmd = ["view", docx_path, "screenshot", "-o", output_path]
+        if args.get("page"):
+            cmd.extend(["--page", str(int(args["page"]))])
+        if args.get("screenshot_width"):
+            cmd.extend(["--screenshot-width", str(int(args["screenshot_width"]))])
+        if args.get("screenshot_height"):
+            cmd.extend(["--screenshot-height", str(int(args["screenshot_height"]))])
+        result = self._run_officecli(cmd, int(args.get("max_output_chars", 20000)), timeout_seconds=120)
+        result["output_path"] = output_path
+        result["output_exists"] = Path(output_path).exists()
+        return result
+
+    def tool_officecli_view_issues(self, args: JSON) -> Any:
+        docx_path = self._resolve_path(args["docx_path"])
+        cmd = ["view", docx_path, "issues", "--json"]
+        if args.get("issue_type"):
+            cmd.extend(["--type", str(args["issue_type"])])
+        if args.get("limit"):
+            cmd.extend(["--limit", str(int(args["limit"]))])
+        return self._run_officecli(cmd, int(args.get("max_output_chars", 50000)))
+
+    def tool_officecli_query(self, args: JSON) -> Any:
+        docx_path = self._resolve_path(args["docx_path"])
+        return self._run_officecli(["query", docx_path, str(args["selector"]), "--json"], int(args.get("max_output_chars", 50000)))
+
+    def tool_officecli_validate(self, args: JSON) -> Any:
+        docx_path = self._resolve_path(args["docx_path"])
+        return self._run_officecli(["validate", docx_path, "--json"], int(args.get("max_output_chars", 50000)))
+
     # Live Word / Office.js session tools.
     def _active_session_id(self, args: JSON) -> str:
         if args.get("session_id"):
@@ -537,7 +651,7 @@ class WordAiMcpServer:
         req_id = request.get("id")
         try:
             if method == "initialize":
-                result = {"protocolVersion": request.get("params", {}).get("protocolVersion", "2025-11-25"), "serverInfo": {"name": "word-ai-mcp", "version": "0.6.0"}, "capabilities": {"tools": {"listChanged": False}, "resources": {}, "prompts": {}}}
+                result = {"protocolVersion": request.get("params", {}).get("protocolVersion", "2025-11-25"), "serverInfo": {"name": "word-ai-mcp", "version": "0.7.0"}, "capabilities": {"tools": {"listChanged": False}, "resources": {}, "prompts": {}}}
                 return {"jsonrpc": "2.0", "id": req_id, "result": result}
             if method == "notifications/initialized":
                 return None

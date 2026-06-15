@@ -1,4 +1,4 @@
-# MCP 工具契约 v0.6：结构稳定优先
+# MCP 工具契约 v0.7：结构稳定优先
 
 本契约面向 Codex / OpenAI Agents / MCP 客户端。设计目标是：让模型拥有足够丰富的读取、定位和规划能力，但把所有正式 DOCX 写入都收口到受控 PatchSet 事务中。离线文件编辑使用 `docx_*` 工具链；当前打开的 Word 文档编辑使用 Office.js taskpane 注册的 `word_session_*` 工具链。
 
@@ -67,9 +67,21 @@ Codex -> word_session_rollback
 
 `word_session_apply_patchset` 只支持内容控件文本类 PatchSet 操作：`replace_content_control_text`、`append_content_control_text`、`prepend_content_control_text`、`replace_text_in_content_control`。它不刷新字段、不导出 PDF、不重建 DOCX，也不直接修改关系、样式、编号、页眉页脚或图片关系。
 
+## OfficeCLI 辅助证据链路
+
+OfficeCLI 是可选辅助后端，不是 Word AI 的权威写入路径。MCP 只暴露以下白名单 wrapper：
+
+- `officecli_view_html`：`officecli view <file> html`，读取 HTML 渲染快照。
+- `officecli_view_screenshot`：`officecli view <file> screenshot -o <output>`，生成 PNG sidecar；属于低风险 sidecar 写入，建议审批。
+- `officecli_view_issues`：`officecli view <file> issues --json`，读取格式/内容/结构问题。
+- `officecli_query`：`officecli query <file> <selector> --json`，读取语义路径查询结果。
+- `officecli_validate`：`officecli validate <file> --json`，作为 Word AI validate 之外的辅助证据。
+
+默认不暴露 OfficeCLI `set`、`add`、`remove`、`move`、`swap`、`batch`、`raw-set`、`create`、`merge`、`dump` 等变更能力。若未来要使用这些能力，必须先包进 Word AI PatchSet、assess、dry-run、audit、rollback 和显式 approval。
+
 ## 工具清单
 
-当前 `tools/list` 暴露 **58 个工具**，包含常用别名，便于 Codex 以自然名称调用。
+当前 `tools/list` 暴露 **63 个工具**，包含常用别名，便于 Codex 以自然名称调用。
 
 ### 包结构与全局健康检查
 
@@ -151,6 +163,16 @@ Codex -> word_session_rollback
 | `word_session_wrap_selection` | 将当前 Word 选区包装为带稳定 tag/title 的内容控件。 |
 | `word_session_rollback` | 使用上一条 live apply 生成的 rollback PatchSet 回滚打开文档。 |
 | `word_session_command_status` | 查询 session 命令队列中的命令状态、结果或错误。 |
+
+### OfficeCLI 辅助证据
+
+| 工具 | 用途 |
+|---|---|
+| `officecli_view_html` | 读取 HTML 渲染快照，用于视觉证据。 |
+| `officecli_view_screenshot` | 输出 PNG screenshot sidecar，不修改 DOCX。 |
+| `officecli_view_issues` | 读取 OfficeCLI issues JSON。 |
+| `officecli_query` | 只读语义路径查询，强制 `--json`。 |
+| `officecli_validate` | OfficeCLI OpenXML validate JSON，作为辅助验证。 |
 
 ## PatchSet 操作白名单
 

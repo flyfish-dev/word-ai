@@ -7,6 +7,7 @@ This directory contains the design, tool contract, safety policy, and validation
 ## English
 
 - [Getting Started](GETTING_STARTED.md): install, build, run, and configure Codex.
+- [Word AI Codex Skill](../skills/word-ai/SKILL.md): official Codex Skill rules for offline `docx_*`, live `word_session_*`, and optional read-only OfficeCLI evidence.
 - [Architecture](ARCHITECTURE.en.md): system architecture and component responsibilities.
 - [Tool Contract](TOOL_CONTRACT.md): MCP tool lifecycle and PatchSet rules.
 - [Security Design](SECURITY.md): path safety, write safety, Office bridge token model, and deployment notes.
@@ -15,11 +16,13 @@ This directory contains the design, tool contract, safety policy, and validation
 - [Stability Policy](STABILITY_POLICY.md): editing risk classes and safety boundaries.
 - [Development Plan](DEVELOPMENT_PLAN.md): roadmap for production hardening.
 - [Code Tool Catalog](CODEX_TOOL_CATALOG.md): generated MCP tool catalog.
+- [v0.7 Changelog](CHANGELOG_V07.md): formal Codex Skill, OfficeCLI boundaries, and one-command startup.
 - [v0.6 Changelog](CHANGELOG_V06.md): live Word session MCP workflow.
 
 ## 中文文档导航
 
 - [快速上手](GETTING_STARTED.md)：安装、构建、运行和 Codex 配置。
+- [Word AI Codex Skill](../skills/word-ai/SKILL.md)：正式 Codex Skill，定义离线 `docx_*`、实时 `word_session_*` 与 OfficeCLI 只读辅助规则。
 - [架构说明](ARCHITECTURE.md)：系统架构和组件职责。
 - [英文架构说明](ARCHITECTURE.en.md)：面向国际协作的英文架构文档。
 - [工具契约](TOOL_CONTRACT.md)：MCP 工具链路与 PatchSet 规则。
@@ -29,6 +32,7 @@ This directory contains the design, tool contract, safety policy, and validation
 - [稳定性策略](STABILITY_POLICY.md)：编辑风险分级与安全边界。
 - [开发计划](DEVELOPMENT_PLAN.md)：生产化路线图。
 - [工具清单](CODEX_TOOL_CATALOG.md)：MCP tools 目录。
+- [v0.7 变更记录](CHANGELOG_V07.md)：正式 Codex Skill、OfficeCLI 边界和一键启动。
 - [v0.6 变更记录](CHANGELOG_V06.md)：Word 会话 MCP 闭环。
 
 ## Recommended Reading Order
