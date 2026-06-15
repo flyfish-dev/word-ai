@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -60,6 +61,22 @@ def default_allowed_roots(root: Path) -> list[Path]:
     return out
 
 
+def find_officecli() -> Path | None:
+    configured = os.environ.get("WORD_AI_OFFICECLI")
+    candidates = []
+    if configured:
+        candidates.append(Path(configured).expanduser())
+    found = shutil.which("officecli")
+    if found:
+        candidates.append(Path(found))
+    candidates.append(Path.home() / ".local" / "bin" / "officecli")
+    for candidate in candidates:
+        path = candidate.expanduser()
+        if path.exists() and os.access(path, os.X_OK):
+            return path.resolve()
+    return None
+
+
 def build_codex_config(root: Path, server_name: str = "word_ai", allowed_roots: list[str] | None = None, include_common_user_roots: bool = True) -> str:
     python_path = preferred_python(root)
     extra_roots = [Path(p).expanduser().resolve() for p in (allowed_roots or [])]
@@ -81,8 +98,11 @@ def build_codex_config(root: Path, server_name: str = "word_ai", allowed_roots: 
         "",
         f"[mcp_servers.{server_name}.env]",
         f"PYTHONPATH = {toml_string(str(root))}",
-        "",
     ]
+    officecli = find_officecli()
+    if officecli:
+        lines.append(f"WORD_AI_OFFICECLI = {toml_string(str(officecli))}")
+    lines.append("")
     for tool in WRITE_APPROVAL_TOOLS:
         lines.extend(
             [
@@ -117,7 +137,8 @@ def doctor(root: Path) -> int:
     node = command_version(["node", "--version"])
     npm = command_version(["npm", "--version"])
     dotnet = command_version(["dotnet", "--version"])
-    officecli = command_version(["officecli", "--version"])
+    officecli_path = find_officecli()
+    officecli = command_version([str(officecli_path), "--version"]) if officecli_path else None
     checks.extend(
         [
             ("node", node is not None, node or "not found"),
