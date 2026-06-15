@@ -1,0 +1,674 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://word-ai.local/schemas/patchset.schema.json",
+  "title": "Word AI Structure-Preserving PatchSet",
+  "description": "Guarded, structure-preserving edit plan for word-ai-mcp. Prefer content-control operations and include source_sha256 plus expected_old_sha256 for production edits.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": [
+        "1.0",
+        "1.1",
+        "2.0"
+      ]
+    },
+    "strict": {
+      "type": "boolean",
+      "default": true
+    },
+    "reason": {
+      "type": "string"
+    },
+    "source_sha256": {
+      "type": "string"
+    },
+    "guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "require_preconditions": {
+          "type": "boolean",
+          "default": false
+        },
+        "allow_overwrite": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": []
+    },
+    "overwrite": {
+      "type": "boolean",
+      "default": false
+    },
+    "abort_on_validation_error": {
+      "type": "boolean",
+      "default": true
+    },
+    "keep_invalid_output": {
+      "type": "boolean",
+      "default": false
+    },
+    "operations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/replaceContentControlText"
+          },
+          {
+            "$ref": "#/$defs/appendContentControlText"
+          },
+          {
+            "$ref": "#/$defs/prependContentControlText"
+          },
+          {
+            "$ref": "#/$defs/replaceTextInContentControl"
+          },
+          {
+            "$ref": "#/$defs/replaceParagraphText"
+          },
+          {
+            "$ref": "#/$defs/insertParagraphAfter"
+          },
+          {
+            "$ref": "#/$defs/insertParagraphBefore"
+          },
+          {
+            "$ref": "#/$defs/replaceTableCellText"
+          },
+          {
+            "$ref": "#/$defs/appendTableRow"
+          },
+          {
+            "$ref": "#/$defs/wrapParagraphWithContentControl"
+          },
+          {
+            "$ref": "#/$defs/addComment"
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "operations"
+  ],
+  "$defs": {
+    "replaceContentControlText": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "replace_content_control_text"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "preserve_style": {
+          "type": "boolean",
+          "default": true
+        },
+        "allow_paragraph_count_change": {
+          "type": "boolean",
+          "default": false
+        },
+        "allow_complex_content": {
+          "type": "boolean",
+          "default": false
+        },
+        "expected_old_text": {
+          "type": "string"
+        },
+        "expected_old_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "tag",
+        "text"
+      ]
+    },
+    "appendContentControlText": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "append_content_control_text"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "expected_old_text": {
+          "type": "string"
+        },
+        "expected_old_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "tag",
+        "text"
+      ]
+    },
+    "prependContentControlText": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "prepend_content_control_text"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "expected_old_text": {
+          "type": "string"
+        },
+        "expected_old_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "tag",
+        "text"
+      ]
+    },
+    "replaceTextInContentControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "replace_text_in_content_control"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "find": {
+          "type": "string"
+        },
+        "replace": {
+          "type": "string"
+        },
+        "occurrence": {
+          "type": "string",
+          "enum": [
+            "first",
+            "all"
+          ],
+          "default": "all"
+        },
+        "require_match": {
+          "type": "boolean",
+          "default": true
+        },
+        "expected_old_text": {
+          "type": "string"
+        },
+        "expected_old_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "tag",
+        "find",
+        "replace"
+      ]
+    },
+    "replaceParagraphText": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "replace_paragraph_text"
+        },
+        "paraId": {
+          "type": "string"
+        },
+        "paragraph_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tag": {
+          "type": "string"
+        },
+        "content_control_tag": {
+          "type": "string"
+        },
+        "target_tag": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "preserve_style": {
+          "type": "boolean",
+          "default": true
+        },
+        "allow_complex_content": {
+          "type": "boolean",
+          "default": false
+        },
+        "expected_old_text": {
+          "type": "string"
+        },
+        "expected_old_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "text"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "paraId"
+          ]
+        },
+        {
+          "required": [
+            "paragraph_index"
+          ]
+        },
+        {
+          "required": [
+            "tag"
+          ]
+        },
+        {
+          "required": [
+            "content_control_tag"
+          ]
+        },
+        {
+          "required": [
+            "target_tag"
+          ]
+        }
+      ]
+    },
+    "insertParagraphAfter": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "insert_paragraph_after"
+        },
+        "paraId": {
+          "type": "string"
+        },
+        "paragraph_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tag": {
+          "type": "string"
+        },
+        "content_control_tag": {
+          "type": "string"
+        },
+        "target_tag": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "inherit_style": {
+          "type": "boolean",
+          "default": true
+        },
+        "expected_old_text": {
+          "type": "string"
+        },
+        "expected_old_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "text"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "paraId"
+          ]
+        },
+        {
+          "required": [
+            "paragraph_index"
+          ]
+        },
+        {
+          "required": [
+            "tag"
+          ]
+        },
+        {
+          "required": [
+            "content_control_tag"
+          ]
+        },
+        {
+          "required": [
+            "target_tag"
+          ]
+        }
+      ]
+    },
+    "insertParagraphBefore": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "insert_paragraph_before"
+        },
+        "paraId": {
+          "type": "string"
+        },
+        "paragraph_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tag": {
+          "type": "string"
+        },
+        "content_control_tag": {
+          "type": "string"
+        },
+        "target_tag": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "inherit_style": {
+          "type": "boolean",
+          "default": true
+        },
+        "expected_old_text": {
+          "type": "string"
+        },
+        "expected_old_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "text"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "paraId"
+          ]
+        },
+        {
+          "required": [
+            "paragraph_index"
+          ]
+        },
+        {
+          "required": [
+            "tag"
+          ]
+        },
+        {
+          "required": [
+            "content_control_tag"
+          ]
+        },
+        {
+          "required": [
+            "target_tag"
+          ]
+        }
+      ]
+    },
+    "replaceTableCellText": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "replace_table_cell_text"
+        },
+        "scope_tag": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "row": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "col": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "text": {
+          "type": "string"
+        },
+        "preserve_style": {
+          "type": "boolean",
+          "default": true
+        },
+        "allow_paragraph_count_change": {
+          "type": "boolean",
+          "default": false
+        },
+        "allow_complex_content": {
+          "type": "boolean",
+          "default": false
+        },
+        "expected_old_text": {
+          "type": "string"
+        },
+        "expected_old_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "table_index",
+        "row",
+        "col",
+        "text"
+      ]
+    },
+    "appendTableRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "append_table_row"
+        },
+        "scope_tag": {
+          "type": "string"
+        },
+        "table_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "template_row": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "expected_old_text": {
+          "type": "string"
+        },
+        "expected_old_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "table_index",
+        "values"
+      ]
+    },
+    "wrapParagraphWithContentControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "wrap_paragraph_with_content_control"
+        },
+        "paraId": {
+          "type": "string"
+        },
+        "paragraph_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "target_tag": {
+          "type": "string"
+        },
+        "content_control_tag": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "alias": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "lock": {
+          "type": "boolean",
+          "default": true
+        },
+        "expected_old_text": {
+          "type": "string"
+        },
+        "expected_old_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "tag"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "paraId"
+          ]
+        },
+        {
+          "required": [
+            "paragraph_index"
+          ]
+        },
+        {
+          "required": [
+            "target_tag"
+          ]
+        },
+        {
+          "required": [
+            "content_control_tag"
+          ]
+        }
+      ]
+    },
+    "addComment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "add_comment"
+        },
+        "paraId": {
+          "type": "string"
+        },
+        "paragraph_index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tag": {
+          "type": "string"
+        },
+        "content_control_tag": {
+          "type": "string"
+        },
+        "target_tag": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "author": {
+          "type": "string"
+        },
+        "initials": {
+          "type": "string"
+        },
+        "expected_old_text": {
+          "type": "string"
+        },
+        "expected_old_sha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "text"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "paraId"
+          ]
+        },
+        {
+          "required": [
+            "paragraph_index"
+          ]
+        },
+        {
+          "required": [
+            "tag"
+          ]
+        },
+        {
+          "required": [
+            "content_control_tag"
+          ]
+        },
+        {
+          "required": [
+            "target_tag"
+          ]
+        }
+      ]
+    }
+  }
+}

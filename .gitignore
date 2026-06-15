@@ -1,0 +1,47 @@
+# OS and editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / Office add-in
+node_modules/
+office-addin/node_modules/
+office-addin/dist/
+
+# .NET
+bin/
+obj/
+dotnet/**/bin/
+dotnet/**/obj/
+
+# Word AI local sidecars and generated verification artifacts
+.wordai/
+examples/.wordai/
+examples/*.edited.docx
+examples/*.edited.audit.json
+examples/*.dotnet.edited.docx
+examples/*.dotnet.edited.audit.json
+examples/*.candidate.*
+examples/*.invalid.docx
+examples/*.invalid.audit.json
+examples/~$*.docx
+codex-work/
+*.tmp
+*.tmp.docx
+
+# Local render/export output
+rendered/
+*.pdf
+*.png
+*.csv

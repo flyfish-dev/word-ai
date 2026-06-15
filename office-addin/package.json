@@ -1,0 +1,19 @@
+{
+  "name": "word-ai-content-control-addin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "npm run build && node scripts/dev-server.js",
+    "dev:http": "npm run build && WORD_AI_ADDIN_HTTP=1 node scripts/dev-server.js",
+    "start": "office-addin-debugging start manifest.xml",
+    "stop": "office-addin-debugging stop manifest.xml"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/office-js": "latest",
+    "office-addin-dev-certs": "latest",
+    "typescript": "latest",
+    "office-addin-debugging": "latest"
+  }
+}

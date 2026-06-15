@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://word-ai.local/schemas/audit.schema.json",
+  "title": "Word AI Edit Audit",
+  "type": "object",
+  "properties": {
+    "source_path": {"type": "string"},
+    "output_path": {"type": "string"},
+    "applied": {"type": "array"},
+    "validation": {"type": "object"},
+    "created_at": {"type": "string"}
+  },
+  "required": ["source_path", "output_path", "applied", "validation", "created_at"]
+}

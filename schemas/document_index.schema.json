@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://word-ai.local/schemas/document_index.schema.json",
+  "title": "Word AI Document Index",
+  "type": "object",
+  "properties": {
+    "path": {"type": "string"},
+    "sha256": {"type": "string"},
+    "paragraph_count": {"type": "integer"},
+    "table_count": {"type": "integer"},
+    "image_count": {"type": "integer"},
+    "field_count": {"type": "integer"},
+    "comment_count": {"type": "integer"},
+    "tracked_change_count": {"type": "integer"},
+    "anchors": {"type": "array"}
+  },
+  "required": ["path", "sha256", "anchors"]
+}

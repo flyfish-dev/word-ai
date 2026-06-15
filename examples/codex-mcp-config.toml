@@ -1,0 +1,10 @@
+# Example Codex-style local MCP configuration. Adjust the exact location to your Codex client config.
+# The server deliberately scopes all file access to this repository root.
+[mcp_servers.word_ai]
+command = "/absolute/path/to/word-ai/.venv/bin/python"
+args = ["-m", "word_ai_mcp.server", "--root", "/absolute/path/to/word-ai"]
+enabled = true
+startup_timeout_sec = 30
+
+[mcp_servers.word_ai.env]
+PYTHONPATH = "/absolute/path/to/word-ai"

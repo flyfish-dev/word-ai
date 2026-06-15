@@ -1,0 +1,232 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <script type="module" src="./taskpane.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --line: #d8dee9;
+      --text: #172033;
+      --muted: #5f6b7a;
+      --accent: #1667d9;
+      --danger: #b42318;
+      --ok: #067647;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 14px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      font-size: 13px;
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+    section {
+      margin: 0 0 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    h2 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+    label {
+      display: block;
+      margin: 8px 0 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    input, select, textarea {
+      width: 100%;
+      min-height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 7px 8px;
+      color: var(--text);
+      background: #fff;
+      font: inherit;
+    }
+    textarea {
+      min-height: 116px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-items: end;
+    }
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    button {
+      min-height: 34px;
+      border: 1px solid #1459ba;
+      border-radius: 6px;
+      padding: 7px 10px;
+      color: #fff;
+      background: var(--accent);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary {
+      border-color: var(--line);
+      color: var(--text);
+      background: #fff;
+    }
+    button.danger {
+      border-color: var(--danger);
+      background: var(--danger);
+    }
+    button:disabled {
+      cursor: default;
+      opacity: .55;
+    }
+    .status {
+      margin-top: 8px;
+      min-height: 26px;
+      border-radius: 6px;
+      padding: 6px 8px;
+      background: #eef2f7;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+    .status.ok {
+      background: #ecfdf3;
+      color: var(--ok);
+    }
+    .status.error {
+      background: #fef3f2;
+      color: var(--danger);
+    }
+    .list {
+      margin: 8px 0 0;
+      padding: 0;
+      list-style: none;
+      max-height: 160px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+    }
+    .list li {
+      padding: 7px 8px;
+      border-bottom: 1px solid #edf0f5;
+      cursor: pointer;
+    }
+    .list li:last-child { border-bottom: 0; }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Word AI MCP</h1>
+
+  <section>
+    <h2>Bridge</h2>
+    <label for="bridgeUrl">URL</label>
+    <input id="bridgeUrl" value="/bridge" />
+    <label for="bridgeToken">Token</label>
+    <input id="bridgeToken" type="password" autocomplete="off" />
+    <div class="toolbar">
+      <button id="connectBridge">Connect</button>
+      <button id="clearLog" class="secondary">Clear</button>
+    </div>
+    <div id="bridgeStatus" class="status">Disconnected</div>
+  </section>
+
+  <section>
+    <h2>Open Word Session</h2>
+    <div class="row">
+      <div>
+        <label for="tag">Tag</label>
+        <input id="tag" value="WORD-AI:SRS:1.0:custom" />
+      </div>
+      <div>
+        <label for="title">Title</label>
+        <input id="title" value="AI editable section" />
+      </div>
+    </div>
+    <div class="toolbar">
+      <button id="wrapSelection">Wrap</button>
+      <button id="listOpenControls" class="secondary">List Open</button>
+    </div>
+    <ul id="openControls" class="list"></ul>
+  </section>
+
+  <section>
+    <h2>DOCX PatchSet</h2>
+    <label for="docxPath">Source DOCX</label>
+    <input id="docxPath" value="examples/sample_contract.docx" />
+    <div class="toolbar">
+      <button id="loadFileControls" class="secondary">Load Anchors</button>
+      <button id="copyOpenTag" class="secondary">Use Open Tag</button>
+    </div>
+    <label for="fileTag">Target Tag</label>
+    <select id="fileTag"></select>
+    <label for="operation">Operation</label>
+    <select id="operation">
+      <option value="replace_content_control_text">Replace</option>
+      <option value="append_content_control_text">Append</option>
+      <option value="prepend_content_control_text">Prepend</option>
+      <option value="replace_text_in_content_control">Find / Replace</option>
+    </select>
+    <label for="newText">Text</label>
+    <textarea id="newText"></textarea>
+    <div class="row">
+      <div>
+        <label for="findText">Find</label>
+        <input id="findText" />
+      </div>
+      <div>
+        <label for="replaceText">Replace</label>
+        <input id="replaceText" />
+      </div>
+    </div>
+    <label for="outputPath">Output DOCX</label>
+    <input id="outputPath" />
+    <div class="toolbar">
+      <button id="buildPatchset">Build</button>
+      <button id="assessPatchset" class="secondary">Assess</button>
+      <button id="dryRunPatchset" class="secondary">Dry Run</button>
+      <button id="applyPatchset" class="danger">Apply</button>
+    </div>
+    <div class="toolbar">
+      <button id="previewOpenPatchset" class="secondary">Preview Open</button>
+      <button id="applyOpenPatchset" class="secondary">Apply Open</button>
+    </div>
+    <label for="patchset">PatchSet</label>
+    <textarea id="patchset" class="mono"></textarea>
+  </section>
+
+  <section>
+    <h2>Result</h2>
+    <div id="resultStatus" class="status">Idle</div>
+    <textarea id="log" rows="14" readonly></textarea>
+  </section>
+</body>
+</html>

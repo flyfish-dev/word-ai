@@ -1,0 +1,29 @@
+{
+  "schema_version": "2.0",
+  "strict": true,
+  "reason": "补强需求规格说明书的概述、功能范围与性能要求，保持表格、标题、页眉页脚、字段和内容控件结构不变。",
+  "operations": [
+    {
+      "op": "replace_content_control_text",
+      "tag": "WORD-AI:SRS:1.0:overview",
+      "expected_old_sha256": "b09a3019b93b1682fb6f64a87123087f9a232ec6229a585fa6d76c9c5b03ecec",
+      "text": "本文档描述系统建设目标、业务范围、关键角色、集成边界和总体约束。系统应支持从需求条目到正式交付文档的可追溯生成，并确保所有自动化修改均可审计、可回滚、可人工复核。"
+    },
+    {
+      "op": "replace_content_control_text",
+      "tag": "WORD-AI:SRS:2.0:functional_scope",
+      "expected_old_sha256": "6c43befd07b9871cb68ad8d3ff8d38c2bb81e52f1cffbd729583225543fb9a30",
+      "text": "系统需支持需求录入、需求评审、版本追踪、锚点化文档编辑、交付文档自动生成、差异比对和审计归档。所有功能性修改必须绑定到内容控件、书签或经过索引确认的段落范围。"
+    },
+    {
+      "op": "replace_content_control_text",
+      "tag": "WORD-AI:SRS:3.0:nfr_performance",
+      "expected_old_sha256": "8a1fd1b467e47bcbc3abce84f04e0d02620cce0c980880ac4453118764ecabc8",
+      "text": "超大文档处理应采用索引优先、分块读取、定点回写和增量验证策略。对于数百页、上万段落级文档，单次 AI 上下文只暴露目标锚点及邻近上下文，禁止整篇文档重建。"
+    }
+  ],
+  "guard": {
+    "require_preconditions": true
+  },
+  "source_sha256": "6b1579dfdd5fb3718cc3eeff1b97274a0933cd00165a6efae935aa33a83e0454"
+}

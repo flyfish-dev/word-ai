@@ -1,0 +1,55 @@
+# Codex Tool Catalog v0.4
+
+本文件由 `word_ai_mcp.server` 的 `tools/list` 生成，当前可发现工具数：**49**。
+
+## 工具列表
+
+1. `docx_health_check` — Read-only. Conservative stability report: duplicate tags, complex content controls, fields, tracked changes, comments, table previews and recommended safety policy.
+2. `docx_inspect` — Read-only. Inspect counts, anchors and optional visible text.
+3. `docx_package_manifest` — Read-only. DOCX ZIP manifest with part sizes and optional SHA-256 hashes.
+4. `docx_list_parts` — Read-only. List all package parts with sizes and hashes.
+5. `docx_part_hashes` — Read-only. Compact DOCX part-hash map for before/after invariance checks.
+6. `docx_structural_fingerprint` — Read-only. Strong structure fingerprint: package parts, content-control hashes, paragraph hashes, table hashes, outline and health report.
+7. `docx_map` — Read-only. Codex-friendly map: health, headings, anchors, paragraph chunks, table summaries and hashes.
+8. `docx_get_outline` — Read-only. Heading outline with section paragraph ranges for large-document chunking.
+9. `docx_outline` — Read-only alias for docx_get_outline; kept for Codex prompt ergonomics.
+10. `docx_list_headings` — Read-only. Heading-only view with previews and hashes.
+11. `docx_read_heading_section` — Read-only. Read one heading section by heading anchor_id or exact heading text.
+12. `docx_list_anchors` — Read-only. List stable editing anchors: content controls, headings, bookmarks and paraId paragraphs.
+13. `docx_read_anchor` — Read-only. Read text behind an anchor_id from docx_list_anchors.
+14. `docx_search_text` — Read-only. Search visible paragraph text; returns paraId, paragraph index, scope and hashes.
+15. `docx_list_paragraphs` — Read-only. Paragraph inventory with style, paraId, heading level, scope, preview, hash and complexity.
+16. `docx_read_paragraph` — Read-only. Read one paragraph by paragraph_index or paraId and return hash/complexity.
+17. `docx_list_content_controls` — Read-only. List content controls with tag, alias, id, preview, text hash and complexity.
+18. `docx_read_content_control` — Read-only. Read content-control text by w:tag. Preferred primitive for safe edits.
+19. `docx_extract_plain_text` — Read-only. Extract visible body text for coarse review; never use to regenerate DOCX.
+20. `docx_export_plain_text` — Write-sidecar only. Export visible body text to .txt; does not modify DOCX.
+21. `docx_list_tables` — Read-only. List table dimensions, scope tags, complexity and preview rows.
+22. `docx_read_table` — Read-only. Read a table matrix by table_index and optional content-control scope_tag.
+23. `docx_read_table_cell` — Read-only. Read a single table cell and return hash for write preconditions.
+24. `docx_export_table_csv` — Write-sidecar only. Export table to CSV; does not modify DOCX. Uses default sidecar naming when out_path is omitted.
+25. `docx_table_to_csv` — Write-sidecar only. Export table to CSV using default naming when out_path is omitted.
+26. `docx_list_styles` — Read-only. List Word styles from styles.xml for style-aware generation.
+27. `docx_list_numbering` — Read-only. Inspect numbering.xml numId/abstractNum mappings.
+28. `docx_list_sections` — Read-only. Inspect section properties, margins, page size and header/footer refs.
+29. `docx_list_fields` — Read-only. List field instructions such as TOC, REF, PAGEREF and SEQ.
+30. `docx_list_images` — Read-only. List drawing/pict objects with relationship IDs and alt metadata.
+31. `docx_list_hyperlinks` — Read-only. List hyperlinks with relationship targets, preview and hashes.
+32. `docx_list_comments` — Read-only. Extract comments.xml previews, author/date/id and hashes.
+33. `docx_extract_comments` — Read-only. Extract full comment metadata and text.
+34. `docx_list_bookmarks` — Read-only. List bookmarks and paths for cross-reference preservation.
+35. `docx_list_headers_footers` — Read-only. Inspect header/footer parts and visible text without modifying them.
+36. `docx_list_notes` — Read-only. Inspect footnotes/endnotes when present.
+37. `docx_list_revisions` — Read-only. List tracked-change nodes with previews and hashes.
+38. `docx_assess_patchset` — Read-only. Resolve PatchSet targets and report risks, touched objects and precondition gaps.
+39. `docx_plan_patchset` — Read-only. Alias-grade PatchSet planning assessment.
+40. `docx_preflight_patchset` — Write-temp. Dry-run PatchSet to a temporary copy, validate, and remove output unless keep_output=true.
+41. `docx_dry_run_patchset` — Write-temp. Same as preflight; useful for explicit Codex dry-run stage.
+42. `docx_write_index` — Write-sidecar only. Write .wordai index JSON; does not modify DOCX.
+43. `docx_backup` — Write-sidecar only. Create timestamped backup; does not modify original DOCX.
+44. `docx_restore_backup` — Write. Restore a backup to target_path.
+45. `docx_rollback` — Write. Restore from backup and optionally back up replaced file first.
+46. `docx_apply_patchset` — Write. Apply constrained PatchSet to a new DOCX plus audit JSON; validation gates final commit.
+47. `docx_validate` — Read-only. Validate structural invariants. Supply touched_* for intentional edits.
+48. `docx_compare_structure` — Read-only. Same validation report phrased as structural comparison.
+49. `docx_text_diff` — Read-only. Unified visible-text diff for human review after validation.
