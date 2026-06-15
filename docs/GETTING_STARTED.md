@@ -9,52 +9,19 @@
 
 ## Install
 
-No-clone npm quick check:
+Recommended installation order:
 
-```bash
-npx -y @flyfish-dev/word-ai --root "$PWD" doctor
-```
+1. **MCP Registry / MCPB**: install server `io.github.flyfish-dev/word-ai` from your MCP host or marketplace when supported.
+2. **Agent Skill**: install the `word-ai` Skill so Codex, Claude Code, and compatible agents follow the safe Word editing workflow.
+3. **Local source install**: use this for full Office.js live Word sessions, the localhost bridge, .NET Open XML regression checks, and development.
+4. **npm secondary channel**: use npm only as a no-clone fallback for clients that cannot consume MCP Registry/MCPB yet.
 
-Run the MCP stdio server through npm:
+MCP Registry details:
 
-```bash
-npm exec --yes --package @flyfish-dev/word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
-```
-
-The official scoped package is `@flyfish-dev/word-ai`. The unscoped compatibility package `word-ai-mcp` is also published with the same CLI entrypoints:
-
-```bash
-npx -y word-ai-mcp --root "$PWD"
-npm exec --yes --package word-ai-mcp -- word-ai --root "$PWD" doctor
-npm exec --yes --package word-ai-mcp -- word-ai-mcp --root "$PWD"
-```
-
-For Codex without cloning the repository:
-
-```toml
-[mcp_servers.word_ai]
-command = "npm"
-args = [
-  "exec",
-  "--yes",
-  "--package",
-  "@flyfish-dev/word-ai",
-  "--",
-  "word-ai-mcp",
-  "--root",
-  "/absolute/path/to/workspace",
-  "--allow-root",
-  "/Users/you/Downloads",
-  "--allow-root",
-  "/Users/you/Documents"
-]
-enabled = true
-startup_timeout_sec = 60
-```
-
-The first npm run creates a Python virtual environment under the user cache and installs the Word AI Python dependencies automatically. Set `WORD_AI_PYTHON=/path/to/python3.10+` if Python discovery needs help.
-
-You can replace `@flyfish-dev/word-ai` with the unscoped compatibility package `word-ai-mcp` in the npm-based Codex config.
+- Server name: `io.github.flyfish-dev/word-ai`
+- Registry metadata: [server.json](../server.json)
+- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.1/word-ai-0.8.1.mcpb`
+- Registry latest API: `https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
 
 Recommended one-command setup:
 
@@ -86,7 +53,7 @@ pip install -r requirements.txt
 
 ## Agent Skill Auto-Install
 
-The installer writes the same formal `word-ai` skill to the local discovery paths used by agent clients:
+The installer writes the formal `word-ai` skill to the local discovery paths used by agent clients. Install the Skill even when the MCP server is installed through the MCP Registry, because it carries the offline/live mode selection rules and safety workflow:
 
 - Codex official user skills: `~/.agents/skills/word-ai`
 - Codex app compatibility skills: `~/.codex/skills/word-ai`
@@ -107,6 +74,50 @@ python3 scripts/install_agent_skills.py --project
 ```
 
 Start a new agent session after installation. If a client does not show the skill immediately, restart that client.
+
+## Secondary npm Channel
+
+npm is a convenience fallback for clients that do not yet consume MCP Registry/MCPB packages, for CI smoke tests, and for quick no-clone stdio startup. Prefer MCP Registry/MCPB for MCP host discovery.
+
+Recommended scoped package:
+
+```bash
+npm exec --yes --package @flyfish-dev/word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
+npm exec --yes --package @flyfish-dev/word-ai -- word-ai --root "$PWD" doctor
+```
+
+Unscoped compatibility package:
+
+```bash
+npx -y word-ai-mcp --root "$PWD"
+npm exec --yes --package word-ai-mcp -- word-ai --root "$PWD" doctor
+npm exec --yes --package word-ai-mcp -- word-ai-mcp --root "$PWD"
+```
+
+Secondary npm-based Codex config:
+
+```toml
+[mcp_servers.word_ai]
+command = "npm"
+args = [
+  "exec",
+  "--yes",
+  "--package",
+  "@flyfish-dev/word-ai",
+  "--",
+  "word-ai-mcp",
+  "--root",
+  "/absolute/path/to/workspace",
+  "--allow-root",
+  "/Users/you/Downloads",
+  "--allow-root",
+  "/Users/you/Documents"
+]
+enabled = true
+startup_timeout_sec = 60
+```
+
+You can replace `@flyfish-dev/word-ai` with `word-ai-mcp` in this npm-based config. The first npm run creates a Python virtual environment under the user cache and installs the Word AI Python dependencies automatically. Set `WORD_AI_PYTHON=/path/to/python3.10+` if Python discovery needs help.
 
 ## Run Local Checks
 
@@ -273,52 +284,19 @@ The live path uses these MCP tools:
 
 ### 安装
 
-npm 免 clone 快速检查：
+推荐安装顺序：
 
-```bash
-npx -y @flyfish-dev/word-ai --root "$PWD" doctor
-```
+1. **MCP Registry / MCPB**：客户端支持时，优先从 MCP host 或 marketplace 安装 `io.github.flyfish-dev/word-ai`。
+2. **Agent Skill**：安装 `word-ai` Skill，让 Codex、Claude Code 和兼容 Agent 遵循安全 Word 编辑流程。
+3. **本地源码安装**：需要完整 Office.js live Word session、localhost bridge、.NET Open XML 回归或开发调试时使用。
+4. **npm 第二渠道**：仅作为暂不支持 MCP Registry/MCPB 的客户端、CI smoke test 或免 clone stdio 启动的备用方式。
 
-通过 npm 运行 MCP stdio server：
+MCP Registry 信息：
 
-```bash
-npm exec --yes --package @flyfish-dev/word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
-```
-
-官方推荐包名是 `@flyfish-dev/word-ai`。同时也发布了非 scope 兼容包 `word-ai-mcp`，CLI 入口完全一致：
-
-```bash
-npx -y word-ai-mcp --root "$PWD"
-npm exec --yes --package word-ai-mcp -- word-ai --root "$PWD" doctor
-npm exec --yes --package word-ai-mcp -- word-ai-mcp --root "$PWD"
-```
-
-Codex 也可以不 clone 仓库，直接通过 npm 启动：
-
-```toml
-[mcp_servers.word_ai]
-command = "npm"
-args = [
-  "exec",
-  "--yes",
-  "--package",
-  "@flyfish-dev/word-ai",
-  "--",
-  "word-ai-mcp",
-  "--root",
-  "/absolute/path/to/workspace",
-  "--allow-root",
-  "/Users/you/Downloads",
-  "--allow-root",
-  "/Users/you/Documents"
-]
-enabled = true
-startup_timeout_sec = 60
-```
-
-首次 npm 启动会在用户缓存目录创建 Python venv，并自动安装 Word AI Python 依赖。如需指定 Python，可设置 `WORD_AI_PYTHON=/path/to/python3.10+`。
-
-如果偏好非 scope 包名，也可以在 npm 版 Codex 配置中把 `@flyfish-dev/word-ai` 替换为 `word-ai-mcp`。
+- MCP server 名称：`io.github.flyfish-dev/word-ai`
+- Registry 元数据：[server.json](../server.json)
+- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.1/word-ai-0.8.1.mcpb`
+- Registry latest API：`https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
 
 推荐一键安装：
 
@@ -350,7 +328,7 @@ pip install -r requirements.txt
 
 ### Agent Skill 一键安装
 
-默认安装会自动写入这些本地识别目录：
+安装器会把正式 `word-ai` Skill 写入 Agent 客户端的本地识别目录。即使 MCP Server 已经通过 MCP Registry 安装，也建议安装 Skill，因为它携带离线/实时模式选择规则和安全流程：
 
 - Codex 官方用户 skill：`~/.agents/skills/word-ai`
 - Codex app 兼容 skill：`~/.codex/skills/word-ai`
@@ -371,6 +349,50 @@ python3 scripts/install_agent_skills.py --project
 ```
 
 安装后新开 Agent 会话；如果客户端没有立即显示，重启客户端即可。
+
+### npm 第二渠道
+
+npm 是便利备用渠道，适合暂不支持 MCP Registry/MCPB 的客户端、CI smoke test、或免 clone 启动 stdio server。MCP host 发现能力优先使用 MCP Registry/MCPB。
+
+推荐 scoped 包：
+
+```bash
+npm exec --yes --package @flyfish-dev/word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
+npm exec --yes --package @flyfish-dev/word-ai -- word-ai --root "$PWD" doctor
+```
+
+非 scope 兼容包：
+
+```bash
+npx -y word-ai-mcp --root "$PWD"
+npm exec --yes --package word-ai-mcp -- word-ai --root "$PWD" doctor
+npm exec --yes --package word-ai-mcp -- word-ai-mcp --root "$PWD"
+```
+
+npm 版 Codex 配置：
+
+```toml
+[mcp_servers.word_ai]
+command = "npm"
+args = [
+  "exec",
+  "--yes",
+  "--package",
+  "@flyfish-dev/word-ai",
+  "--",
+  "word-ai-mcp",
+  "--root",
+  "/absolute/path/to/workspace",
+  "--allow-root",
+  "/Users/you/Downloads",
+  "--allow-root",
+  "/Users/you/Documents"
+]
+enabled = true
+startup_timeout_sec = 60
+```
+
+也可以把该 npm 配置中的 `@flyfish-dev/word-ai` 替换为 `word-ai-mcp`。首次 npm 启动会在用户缓存目录创建 Python venv，并自动安装 Word AI Python 依赖。如需指定 Python，可设置 `WORD_AI_PYTHON=/path/to/python3.10+`。
 
 ### 本地验证
 
