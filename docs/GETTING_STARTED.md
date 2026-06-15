@@ -12,13 +12,13 @@
 No-clone npm quick check:
 
 ```bash
-npx -y word-ai --root "$PWD" doctor
+npx -y @flyfish-dev/word-ai --root "$PWD" doctor
 ```
 
 Run the MCP stdio server through npm:
 
 ```bash
-npm exec --yes --package word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
+npm exec --yes --package @flyfish-dev/word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
 ```
 
 For Codex without cloning the repository:
@@ -30,7 +30,7 @@ args = [
   "exec",
   "--yes",
   "--package",
-  "word-ai",
+  "@flyfish-dev/word-ai",
   "--",
   "word-ai-mcp",
   "--root",
@@ -266,13 +266,13 @@ The live path uses these MCP tools:
 npm 免 clone 快速检查：
 
 ```bash
-npx -y word-ai --root "$PWD" doctor
+npx -y @flyfish-dev/word-ai --root "$PWD" doctor
 ```
 
 通过 npm 运行 MCP stdio server：
 
 ```bash
-npm exec --yes --package word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
+npm exec --yes --package @flyfish-dev/word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
 ```
 
 Codex 也可以不 clone 仓库，直接通过 npm 启动：
@@ -284,7 +284,7 @@ args = [
   "exec",
   "--yes",
   "--package",
-  "word-ai",
+  "@flyfish-dev/word-ai",
   "--",
   "word-ai-mcp",
   "--root",

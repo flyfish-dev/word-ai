@@ -54,19 +54,19 @@ The Office.js taskpane is the Word session layer. It creates and lists content c
 No-clone npm quick check:
 
 ```bash
-npx -y word-ai --root "$PWD" doctor
+npx -y @flyfish-dev/word-ai --root "$PWD" doctor
 ```
 
 Run the MCP stdio server through npm:
 
 ```bash
-npm exec --yes --package word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
+npm exec --yes --package @flyfish-dev/word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
 ```
 
 After a global install, the same commands are available directly:
 
 ```bash
-npm install -g word-ai
+npm install -g @flyfish-dev/word-ai
 word-ai --root "$PWD" doctor
 word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
 ```
@@ -208,7 +208,7 @@ args = [
   "exec",
   "--yes",
   "--package",
-  "word-ai",
+  "@flyfish-dev/word-ai",
   "--",
   "word-ai-mcp",
   "--root",
@@ -371,19 +371,19 @@ Word AI 是一个开源 MCP Server 与 Office.js Bridge，用于安全、可审�
 npm 免 clone 快速检查：
 
 ```bash
-npx -y word-ai --root "$PWD" doctor
+npx -y @flyfish-dev/word-ai --root "$PWD" doctor
 ```
 
 通过 npm 运行 MCP stdio server：
 
 ```bash
-npm exec --yes --package word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
+npm exec --yes --package @flyfish-dev/word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
 ```
 
 全局安装后可直接使用：
 
 ```bash
-npm install -g word-ai
+npm install -g @flyfish-dev/word-ai
 word-ai --root "$PWD" doctor
 word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
 ```
@@ -524,7 +524,7 @@ args = [
   "exec",
   "--yes",
   "--package",
-  "word-ai",
+  "@flyfish-dev/word-ai",
   "--",
   "word-ai-mcp",
   "--root",
