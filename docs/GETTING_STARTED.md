@@ -9,6 +9,43 @@
 
 ## Install
 
+No-clone npm quick check:
+
+```bash
+npx -y word-ai --root "$PWD" doctor
+```
+
+Run the MCP stdio server through npm:
+
+```bash
+npm exec --yes --package word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
+```
+
+For Codex without cloning the repository:
+
+```toml
+[mcp_servers.word_ai]
+command = "npm"
+args = [
+  "exec",
+  "--yes",
+  "--package",
+  "word-ai",
+  "--",
+  "word-ai-mcp",
+  "--root",
+  "/absolute/path/to/workspace",
+  "--allow-root",
+  "/Users/you/Downloads",
+  "--allow-root",
+  "/Users/you/Documents"
+]
+enabled = true
+startup_timeout_sec = 60
+```
+
+The first npm run creates a Python virtual environment under the user cache and installs the Word AI Python dependencies automatically. Set `WORD_AI_PYTHON=/path/to/python3.10+` if Python discovery needs help.
+
 Recommended one-command setup:
 
 ```bash
@@ -225,6 +262,43 @@ The live path uses these MCP tools:
 - Node.js 和 npm，用于 Office.js taskpane。
 
 ### 安装
+
+npm 免 clone 快速检查：
+
+```bash
+npx -y word-ai --root "$PWD" doctor
+```
+
+通过 npm 运行 MCP stdio server：
+
+```bash
+npm exec --yes --package word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
+```
+
+Codex 也可以不 clone 仓库，直接通过 npm 启动：
+
+```toml
+[mcp_servers.word_ai]
+command = "npm"
+args = [
+  "exec",
+  "--yes",
+  "--package",
+  "word-ai",
+  "--",
+  "word-ai-mcp",
+  "--root",
+  "/absolute/path/to/workspace",
+  "--allow-root",
+  "/Users/you/Downloads",
+  "--allow-root",
+  "/Users/you/Documents"
+]
+enabled = true
+startup_timeout_sec = 60
+```
+
+首次 npm 启动会在用户缓存目录创建 Python venv，并自动安装 Word AI Python 依赖。如需指定 Python，可设置 `WORD_AI_PYTHON=/path/to/python3.10+`。
 
 推荐一键安装：
 

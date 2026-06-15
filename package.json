@@ -1,0 +1,52 @@
+{
+  "name": "word-ai",
+  "version": "0.8.1",
+  "description": "Structure-preserving Word DOCX editing MCP server and Office.js bridge for AI agents",
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/flyfish-dev/word-ai#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flyfish-dev/word-ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/flyfish-dev/word-ai/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "word",
+    "docx",
+    "office",
+    "office-js",
+    "ooxml",
+    "openxml",
+    "codex",
+    "claude"
+  ],
+  "bin": {
+    "word-ai": "bin/word-ai.js",
+    "word-ai-mcp": "bin/word-ai-mcp.js",
+    "word-ai-http": "bin/word-ai-http.js"
+  },
+  "files": [
+    "bin/",
+    "word_ai_mcp/*.py",
+    "schemas/",
+    "skills/",
+    "codex-skill/",
+    "scripts/install_agent_skills.py",
+    "scripts/validate_word_ai_skill.py",
+    "pyproject.toml",
+    "requirements.txt",
+    "README.md",
+    "LICENSE",
+    "AGENTS.md",
+    "server.json"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

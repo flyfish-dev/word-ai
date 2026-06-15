@@ -22,10 +22,15 @@ office-addin/node_modules/
 office-addin/dist/
 
 # .NET
-bin/
+/bin/
 obj/
 dotnet/**/bin/
 dotnet/**/obj/
+
+# Root npm CLI entrypoints
+!/bin/
+!/bin/word-ai*.js
+!/bin/word-ai-launcher.cjs
 
 # Word AI local sidecars and generated verification artifacts
 .wordai/
