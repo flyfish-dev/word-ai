@@ -21,6 +21,14 @@ Run the MCP stdio server through npm:
 npm exec --yes --package @flyfish-dev/word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
 ```
 
+The official scoped package is `@flyfish-dev/word-ai`. The unscoped compatibility package `word-ai-mcp` is also published with the same CLI entrypoints:
+
+```bash
+npx -y word-ai-mcp --root "$PWD"
+npm exec --yes --package word-ai-mcp -- word-ai --root "$PWD" doctor
+npm exec --yes --package word-ai-mcp -- word-ai-mcp --root "$PWD"
+```
+
 For Codex without cloning the repository:
 
 ```toml
@@ -45,6 +53,8 @@ startup_timeout_sec = 60
 ```
 
 The first npm run creates a Python virtual environment under the user cache and installs the Word AI Python dependencies automatically. Set `WORD_AI_PYTHON=/path/to/python3.10+` if Python discovery needs help.
+
+You can replace `@flyfish-dev/word-ai` with the unscoped compatibility package `word-ai-mcp` in the npm-based Codex config.
 
 Recommended one-command setup:
 
@@ -275,6 +285,14 @@ npx -y @flyfish-dev/word-ai --root "$PWD" doctor
 npm exec --yes --package @flyfish-dev/word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
 ```
 
+官方推荐包名是 `@flyfish-dev/word-ai`。同时也发布了非 scope 兼容包 `word-ai-mcp`，CLI 入口完全一致：
+
+```bash
+npx -y word-ai-mcp --root "$PWD"
+npm exec --yes --package word-ai-mcp -- word-ai --root "$PWD" doctor
+npm exec --yes --package word-ai-mcp -- word-ai-mcp --root "$PWD"
+```
+
 Codex 也可以不 clone 仓库，直接通过 npm 启动：
 
 ```toml
@@ -299,6 +317,8 @@ startup_timeout_sec = 60
 ```
 
 首次 npm 启动会在用户缓存目录创建 Python venv，并自动安装 Word AI Python 依赖。如需指定 Python，可设置 `WORD_AI_PYTHON=/path/to/python3.10+`。
+
+如果偏好非 scope 包名，也可以在 npm 版 Codex 配置中把 `@flyfish-dev/word-ai` 替换为 `word-ai-mcp`。
 
 推荐一键安装：
 

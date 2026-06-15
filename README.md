@@ -63,6 +63,14 @@ Run the MCP stdio server through npm:
 npm exec --yes --package @flyfish-dev/word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
 ```
 
+The official scoped package is `@flyfish-dev/word-ai`. The unscoped compatibility package `word-ai-mcp` is also published with the same CLI entrypoints:
+
+```bash
+npx -y word-ai-mcp --root "$PWD"
+npm exec --yes --package word-ai-mcp -- word-ai --root "$PWD" doctor
+npm exec --yes --package word-ai-mcp -- word-ai-mcp --root "$PWD"
+```
+
 After a global install, the same commands are available directly:
 
 ```bash
@@ -224,6 +232,8 @@ startup_timeout_sec = 60
 
 The first npm run creates a local Python virtual environment under the user cache and installs Word AI Python dependencies automatically. Set `WORD_AI_PYTHON=/path/to/python3.10+` if Python discovery needs help.
 
+You can replace `@flyfish-dev/word-ai` with the unscoped compatibility package `word-ai-mcp` in the npm-based Codex config.
+
 `--root` is the primary workspace for relative paths and Word AI sidecars. Repeat `--allow-root` for external document folders you want Codex to edit, such as Downloads, Documents, or a team project folder. The installer-generated `.wordai/codex-config.toml` includes common user document folders automatically.
 
 Recommended approval policy for write tools:
@@ -378,6 +388,14 @@ npx -y @flyfish-dev/word-ai --root "$PWD" doctor
 
 ```bash
 npm exec --yes --package @flyfish-dev/word-ai -- word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
+```
+
+官方推荐包名是 `@flyfish-dev/word-ai`。同时也发布了非 scope 兼容包 `word-ai-mcp`，CLI 入口完全一致：
+
+```bash
+npx -y word-ai-mcp --root "$PWD"
+npm exec --yes --package word-ai-mcp -- word-ai --root "$PWD" doctor
+npm exec --yes --package word-ai-mcp -- word-ai-mcp --root "$PWD"
 ```
 
 全局安装后可直接使用：
@@ -539,6 +557,8 @@ startup_timeout_sec = 60
 ```
 
 首次 npm 启动会在用户缓存目录创建 Python venv，并自动安装 Word AI Python 依赖。如需指定 Python，可设置 `WORD_AI_PYTHON=/path/to/python3.10+`。
+
+如果偏好非 scope 包名，也可以在 npm 版 Codex 配置中把 `@flyfish-dev/word-ai` 替换为 `word-ai-mcp`。
 
 `--root` 是相对路径和 `.wordai` sidecar 的主工作区。需要编辑 Downloads、Documents 或团队目录中的原始 DOCX 时，重复添加 `--allow-root`。安装脚本生成的 `.wordai/codex-config.toml` 会自动加入常见用户文档目录。
 
