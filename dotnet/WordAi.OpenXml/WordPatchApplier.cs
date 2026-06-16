@@ -166,6 +166,7 @@ public sealed class WordPatchApplier
         var before = new WordInspector().Inspect(sourceFullPath);
         var applied = new List<Dictionary<string, object?>>();
         var validationOptions = BuildValidationOptions(assessment, patchSet);
+        var styles = WordInspector.LoadParagraphStyles(sourceFullPath);
 
         try
         {
@@ -174,7 +175,7 @@ public sealed class WordPatchApplier
                 var body = doc.MainDocumentPart?.Document?.Body ?? throw new InvalidOperationException("Missing document body.");
                 foreach (var op in patchSet.Operations)
                 {
-                    ApplyOperation(doc, body, op, applied);
+                    ApplyOperation(doc, body, op, applied, styles);
                 }
                 doc.MainDocumentPart!.Document.Save();
             }
@@ -234,7 +235,7 @@ public sealed class WordPatchApplier
         return audit;
     }
 
-    private static void ApplyOperation(WordprocessingDocument doc, Body body, PatchOperation op, List<Dictionary<string, object?>> applied)
+    private static void ApplyOperation(WordprocessingDocument doc, Body body, PatchOperation op, List<Dictionary<string, object?>> applied, IReadOnlyDictionary<string, WordInspector.ParagraphStyleInfo> styles)
     {
         switch (op)
         {
@@ -275,10 +276,10 @@ public sealed class WordPatchApplier
                 applied.Add(ParagraphApplied("replace_paragraph_text", body, p, paraOld, para.Text));
                 break;
             case InsertParagraphAfterOperation after:
-                InsertParagraph(body, after, after.Text, insertAfter: true, after.InheritStyle, after.InheritHeadingStyle, applied);
+                InsertParagraph(body, after, after.Text, insertAfter: true, after.InheritStyle, after.InheritHeadingStyle, applied, styles);
                 break;
             case InsertParagraphBeforeOperation before:
-                InsertParagraph(body, before, before.Text, insertAfter: false, before.InheritStyle, before.InheritHeadingStyle, applied);
+                InsertParagraph(body, before, before.Text, insertAfter: false, before.InheritStyle, before.InheritHeadingStyle, applied, styles);
                 break;
             case ReplaceTableCellTextOperation cell:
                 var table = FindTable(body, cell.TableIndex, cell.ScopeTag);
@@ -478,12 +479,12 @@ public sealed class WordPatchApplier
         }
     }
 
-    private static void InsertParagraph(Body body, ParagraphScopedOperation op, string text, bool insertAfter, bool inheritStyle, bool inheritHeadingStyle, List<Dictionary<string, object?>> applied)
+    private static void InsertParagraph(Body body, ParagraphScopedOperation op, string text, bool insertAfter, bool inheritStyle, bool inheritHeadingStyle, List<Dictionary<string, object?>> applied, IReadOnlyDictionary<string, WordInspector.ParagraphStyleInfo> styles)
     {
         var target = FindTargetParagraph(body, op, wrapMode: false);
         var old = WordInspector.ParagraphText(target);
         AssertExpected(old, op.ExpectedOldText, op.ExpectedOldSha256, "anchor paragraph");
-        if (WordInspector.HeadingLevel(target.ParagraphProperties?.ParagraphStyleId?.Val?.Value) is not null && !inheritHeadingStyle)
+        if (WordInspector.HeadingLevel(target, styles) is not null && !inheritHeadingStyle)
         {
             inheritStyle = false;
         }

@@ -15,6 +15,7 @@ from word_ai_mcp.ooxml import (
     read_paragraph,
     read_table_cell,
 )
+from scripts.run_outline_regression import make_fixture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,6 +74,14 @@ def main() -> int:
 
     with TemporaryDirectory() as td0:
         td = Path(td0)
+
+        outline_fixture = td / "outline-regression.docx"
+        make_fixture(outline_fixture)
+        outline_profile = run_dotnet("inspect", str(outline_fixture))
+        outline_anchors = [a for a in outline_profile["anchors"] if a["kind"] == "heading"]
+        assert outline_profile["heading_count"] == 6, outline_profile
+        assert [a["text_preview"] for a in outline_anchors] == ["功能介绍", "目录管理系统", "中文一级标题", "中文二级标题", "直接大纲级别", "附录一"], outline_anchors
+        ops_tested.append("inspect_chinese_outline_without_toc")
 
         cc = list_content_controls(SRC)["content_controls"][0]
         out = td / "replace-control.docx"

@@ -199,13 +199,170 @@ def _style_id_for_paragraph(p: etree._Element) -> str | None:
     return pstyle.get(qn("w:val")) if pstyle is not None else None
 
 
-def _heading_level(style_id: str | None) -> int | None:
+def _style_name_for_id(styles: dict[str, dict[str, Any]], style_id: str | None) -> str | None:
     if not style_id:
         return None
-    match = re.match(r"Heading(\d+)$", style_id, re.I) or re.match(r"标题(\d+)$", style_id, re.I)
+    info = styles.get(style_id)
+    return str(info.get("name")) if info and info.get("name") is not None else None
+
+
+def _outline_level_value(value: str | None) -> int | None:
+    if value is None:
+        return None
+    try:
+        raw = int(value)
+    except (TypeError, ValueError):
+        return None
+    if 0 <= raw <= 8:
+        return raw + 1
+    return None
+
+
+def _heading_level_from_name(value: str | None) -> int | None:
+    if not value:
+        return None
+    normalized = re.sub(r"\s+", "", value.strip())
+    match = re.match(r"(?i)^heading([1-9])$", normalized) or re.match(r"^标题([1-9])$", normalized)
     if match:
         return int(match.group(1))
     return None
+
+
+def _is_toc_field_instruction(instr: str | None) -> bool:
+    if not instr:
+        return False
+    return bool(re.match(r"^\s*TOC(?:\s|\\|$)", instr, re.I))
+
+
+def _is_toc_style(style_id: str | None, styles: dict[str, dict[str, Any]] | None = None) -> bool:
+    values = [style_id or ""]
+    if styles and style_id and style_id in styles:
+        values.append(str(styles[style_id].get("name") or ""))
+    for value in values:
+        normalized = re.sub(r"\s+", "", value.strip()).lower()
+        if not normalized:
+            continue
+        if re.match(r"^toc\d*$", normalized) or normalized in {"tocheading", "tableofcontents"}:
+            return True
+        if normalized.startswith("toc") and ("heading" in normalized or normalized[3:].isdigit()):
+            return True
+        if normalized.startswith("目录") or normalized.startswith("wpsoffice手动目录"):
+            return True
+        if normalized.startswith("tableofcontents"):
+            return True
+    return False
+
+
+def _paragraph_direct_outline_level(p: etree._Element) -> int | None:
+    outline = p.find("./w:pPr/w:outlineLvl", namespaces=NS)
+    return _outline_level_value(outline.get(qn("w:val")) if outline is not None else None)
+
+
+def _heading_level(style_id: str | None, styles: dict[str, dict[str, Any]] | None = None, paragraph: etree._Element | None = None) -> int | None:
+    if _is_toc_style(style_id, styles):
+        return None
+    if paragraph is not None:
+        direct = _paragraph_direct_outline_level(paragraph)
+        if direct is not None:
+            return direct
+    direct_style = _heading_level_from_name(style_id)
+    if direct_style is not None:
+        return direct_style
+    if styles and style_id:
+        info = styles.get(style_id)
+        if info:
+            if _is_toc_style(style_id, styles):
+                return None
+            name_level = _heading_level_from_name(str(info.get("name") or ""))
+            if name_level is not None:
+                return name_level
+            outline_level = _outline_level_value(str(info.get("outline_level")) if info.get("outline_level") is not None else None)
+            if outline_level is not None:
+                return outline_level
+    return None
+
+
+def _load_paragraph_styles(docx_path: str | Path) -> dict[str, dict[str, Any]]:
+    if not _zip_has(docx_path, STYLES_XML):
+        return {}
+    tree = _parse_xml(_zip_read(docx_path, STYLES_XML))
+    styles: dict[str, dict[str, Any]] = {}
+    for style in tree.getroot().xpath("//w:style[@w:type='paragraph']", namespaces=NS):
+        style_id = style.get(qn("w:styleId"))
+        if not style_id:
+            continue
+        name = style.find("./w:name", namespaces=NS)
+        based_on = style.find("./w:basedOn", namespaces=NS)
+        outline = style.find("./w:pPr/w:outlineLvl", namespaces=NS)
+        styles[style_id] = {
+            "style_id": style_id,
+            "name": name.get(qn("w:val")) if name is not None else None,
+            "based_on": based_on.get(qn("w:val")) if based_on is not None else None,
+            "outline_level": outline.get(qn("w:val")) if outline is not None else None,
+            "is_toc": False,
+        }
+    for style_id, info in styles.items():
+        info["is_toc"] = _is_toc_style(style_id, styles)
+        info["heading_level"] = _heading_level(style_id, styles)
+    return styles
+
+
+def _is_toc_sdt_descendant(el: etree._Element) -> bool:
+    cur: etree._Element | None = el
+    while cur is not None:
+        if cur.tag == qn("w:sdt"):
+            values: list[str] = []
+            for node in cur.xpath("./w:sdtPr//w:alias | ./w:sdtPr//w:tag | ./w:sdtPr//w:docPartGallery", namespaces=NS):
+                value = node.get(qn("w:val"))
+                if value:
+                    values.append(value)
+            raw = " ".join(values).lower()
+            normalized = re.sub(r"\s+", "", raw)
+            if "tableofcontents" in normalized or "目录" in raw or re.search(r"(^|[^a-z])toc([^a-z]|$)", raw):
+                return True
+        cur = cur.getparent()
+    return False
+
+
+def _toc_paragraph_indices(root: etree._Element, styles: dict[str, dict[str, Any]]) -> set[int]:
+    paragraphs = root.xpath("//w:body//w:p", namespaces=NS)
+    indices: set[int] = set()
+    field_stack: list[dict[str, Any]] = []
+
+    def active_toc_field() -> bool:
+        return any(bool(ctx.get("is_toc")) for ctx in field_stack)
+
+    for idx, p in enumerate(paragraphs, start=1):
+        style_id = _style_id_for_paragraph(p)
+        is_toc = active_toc_field() or _is_toc_style(style_id, styles) or _is_toc_sdt_descendant(p)
+        for fld in p.xpath(".//w:fldSimple", namespaces=NS):
+            if _is_toc_field_instruction(fld.get(qn("w:instr"))):
+                is_toc = True
+        for el in p.iter():
+            if not isinstance(el.tag, str):
+                continue
+            if el.tag == qn("w:fldChar"):
+                kind = el.get(qn("w:fldCharType"))
+                if kind == "begin":
+                    field_stack.append({"instr": "", "is_toc": False})
+                elif kind == "separate":
+                    if active_toc_field():
+                        is_toc = True
+                elif kind == "end":
+                    if active_toc_field():
+                        is_toc = True
+                    if field_stack:
+                        field_stack.pop()
+            elif el.tag == qn("w:instrText") and field_stack:
+                field_stack[-1]["instr"] += el.text or ""
+                if _is_toc_field_instruction(field_stack[-1]["instr"]):
+                    field_stack[-1]["is_toc"] = True
+                    is_toc = True
+        if active_toc_field():
+            is_toc = True
+        if is_toc:
+            indices.add(idx)
+    return indices
 
 
 def _element_path(el: etree._Element) -> str:
@@ -367,6 +524,8 @@ def health_check(docx_path: str | Path, max_items: int = 50) -> dict[str, Any]:
 def list_anchors(docx_path: str | Path, max_preview: int = 240) -> list[Anchor]:
     tree = load_document_tree(docx_path)
     root = tree.getroot()
+    styles = _load_paragraph_styles(docx_path)
+    toc_paragraphs = _toc_paragraph_indices(root, styles)
     anchors: list[Anchor] = []
 
     for sdt in root.xpath("//w:sdt", namespaces=NS):
@@ -392,7 +551,8 @@ def list_anchors(docx_path: str | Path, max_preview: int = 240) -> list[Anchor]:
     for p in root.xpath("//w:body//w:p", namespaces=NS):
         para_idx += 1
         style_id = _style_id_for_paragraph(p)
-        level = _heading_level(style_id)
+        is_toc = para_idx in toc_paragraphs
+        level = None if is_toc else _heading_level(style_id, styles, paragraph=p)
         txt = paragraph_text(p).strip()
         if level and txt:
             while len(outline_stack) >= level:
@@ -407,10 +567,10 @@ def list_anchors(docx_path: str | Path, max_preview: int = 240) -> list[Anchor]:
                     text_preview=txt[:max_preview],
                     style_id=style_id,
                     level=level,
-                    extra={"paragraph_index": para_idx, "paraId": p.get(qn("w14:paraId")), "text_sha256": _sha(txt)},
+                    extra={"paragraph_index": para_idx, "paraId": p.get(qn("w14:paraId")), "style_name": _style_name_for_id(styles, style_id), "is_toc": False, "text_sha256": _sha(txt)},
                 )
             )
-        elif txt:
+        elif txt and not is_toc:
             para_id = p.get(qn("w14:paraId"))
             if para_id:
                 anchors.append(
@@ -421,7 +581,7 @@ def list_anchors(docx_path: str | Path, max_preview: int = 240) -> list[Anchor]:
                         path=_element_path(p),
                         text_preview=txt[:max_preview],
                         style_id=style_id,
-                        extra={"paragraph_index": para_idx, "paraId": para_id, "content_control_tag": _ancestor_sdt_tag(p), "text_sha256": _sha(txt)},
+                        extra={"paragraph_index": para_idx, "paraId": para_id, "style_name": _style_name_for_id(styles, style_id), "content_control_tag": _ancestor_sdt_tag(p), "is_toc": False, "text_sha256": _sha(txt)},
                     )
                 )
 
@@ -445,11 +605,15 @@ def get_outline(docx_path: str | Path) -> dict[str, Any]:
     tree = load_document_tree(docx_path)
     root = tree.getroot()
     paras = root.xpath("//w:body//w:p", namespaces=NS)
+    styles = _load_paragraph_styles(docx_path)
+    toc_paragraphs = _toc_paragraph_indices(root, styles)
     headings: list[dict[str, Any]] = []
     stack: list[dict[str, Any]] = []
     for i, p in enumerate(paras, start=1):
+        if i in toc_paragraphs:
+            continue
         style_id = _style_id_for_paragraph(p)
-        level = _heading_level(style_id)
+        level = _heading_level(style_id, styles, paragraph=p)
         text = paragraph_text(p).strip()
         if not level or not text:
             continue
@@ -465,6 +629,8 @@ def get_outline(docx_path: str | Path) -> dict[str, Any]:
             "paraId": p.get(qn("w14:paraId")),
             "level": level,
             "style_id": style_id,
+            "style_name": _style_name_for_id(styles, style_id),
+            "is_toc": False,
             "text": text,
             "path": _element_path(p),
             "end_paragraph_index": len(paras),
@@ -1210,6 +1376,7 @@ def apply_patchset(docx_path: str | Path, patchset: dict[str, Any], output_path:
     before = inspect_docx(docx_path)
     tree = load_document_tree(docx_path)
     root = tree.getroot()
+    styles = _load_paragraph_styles(docx_path)
     applied: list[dict[str, Any]] = []
     replacements: dict[str, bytes] = {}
     touched_tags: set[str] = set()
@@ -1308,7 +1475,7 @@ def apply_patchset(docx_path: str | Path, patchset: dict[str, Any], output_path:
             # Structure-first default: never inherit heading styles for inserted body paragraphs
             # unless the caller explicitly allows it. This prevents accidental heading-count
             # changes when Codex inserts content before/after a heading anchor.
-            if _heading_level(_style_id_for_paragraph(p)) is not None and not bool(op.get("inherit_heading_style", False)):
+            if _heading_level(_style_id_for_paragraph(p), styles, paragraph=p) is not None and not bool(op.get("inherit_heading_style", False)):
                 inherit_style = False
             ppr = p.find("./w:pPr", namespaces=NS) if inherit_style else None
             rpr = p.find(".//w:rPr", namespaces=NS) if inherit_style else None
@@ -1852,18 +2019,23 @@ def read_paragraph(docx_path: str | Path, *, paraId: str | None = None, paragrap
 def list_paragraphs(docx_path: str | Path, max_preview: int = 240, include_empty: bool = False) -> dict[str, Any]:
     tree = load_document_tree(docx_path)
     root = tree.getroot()
+    styles = _load_paragraph_styles(docx_path)
+    toc_paragraphs = _toc_paragraph_indices(root, styles)
     items: list[dict[str, Any]] = []
     for idx, p in enumerate(root.xpath("//w:body//w:p", namespaces=NS), start=1):
         text = paragraph_text(p)
         if not include_empty and not text.strip():
             continue
         style_id = _style_id_for_paragraph(p)
+        is_toc = idx in toc_paragraphs
         items.append(
             {
                 "paragraph_index": idx,
                 "paraId": p.get(qn("w14:paraId")),
                 "style_id": style_id,
-                "heading_level": _heading_level(style_id),
+                "style_name": _style_name_for_id(styles, style_id),
+                "heading_level": None if is_toc else _heading_level(style_id, styles, paragraph=p),
+                "is_toc": is_toc,
                 "content_control_tag": _ancestor_sdt_tag(p),
                 "table_index": _ancestor_table_index(p, root),
                 "path": _element_path(p),
@@ -1878,16 +2050,22 @@ def list_paragraphs(docx_path: str | Path, max_preview: int = 240, include_empty
 def read_paragraph(docx_path: str | Path, paragraph_index: int | None = None, paraId: str | None = None) -> dict[str, Any]:
     tree = load_document_tree(docx_path)
     root = tree.getroot()
+    styles = _load_paragraph_styles(docx_path)
+    toc_paragraphs = _toc_paragraph_indices(root, styles)
     p = _find_paragraph(root, para_id=paraId, paragraph_index=paragraph_index)
     if p is None:
         raise ValueError("Paragraph not found")
     text = paragraph_text(p)
     style_id = _style_id_for_paragraph(p)
+    actual_index = _paragraph_global_index(root, p)
+    is_toc = bool(actual_index and actual_index in toc_paragraphs)
     return {
-        "paragraph_index": paragraph_index,
+        "paragraph_index": actual_index or paragraph_index,
         "paraId": p.get(qn("w14:paraId")),
         "style_id": style_id,
-        "heading_level": _heading_level(style_id),
+        "style_name": _style_name_for_id(styles, style_id),
+        "heading_level": None if is_toc else _heading_level(style_id, styles, paragraph=p),
+        "is_toc": is_toc,
         "content_control_tag": _ancestor_sdt_tag(p),
         "table_index": _ancestor_table_index(p, root),
         "path": _element_path(p),
@@ -2149,17 +2327,23 @@ def list_docx_parts(docx_path: str | Path) -> dict[str, Any]:
 def build_document_map(docx_path: str | Path, max_preview: int = 500, include_text: bool = False) -> dict[str, Any]:
     tree = load_document_tree(docx_path)
     root = tree.getroot()
+    styles = _load_paragraph_styles(docx_path)
+    toc_paragraphs = _toc_paragraph_indices(root, styles)
     paragraphs = []
     for idx, p in enumerate(root.xpath("//w:body//w:p", namespaces=NS), start=1):
         text = paragraph_text(p)
         if not text.strip() and not include_text:
             continue
+        style_id = _style_id_for_paragraph(p)
+        is_toc = idx in toc_paragraphs
         paragraphs.append(
             {
                 "paragraph_index": idx,
                 "paraId": p.get(qn("w14:paraId")),
-                "style_id": _style_id_for_paragraph(p),
-                "heading_level": _heading_level(_style_id_for_paragraph(p)),
+                "style_id": style_id,
+                "style_name": _style_name_for_id(styles, style_id),
+                "heading_level": None if is_toc else _heading_level(style_id, styles, paragraph=p),
+                "is_toc": is_toc,
                 "content_control_tag": _ancestor_sdt_tag(p),
                 "table_index": _ancestor_table_index(p, root),
                 "text_preview": text[:max_preview],
@@ -2435,15 +2619,20 @@ def read_table(docx_path: str | Path, table_index: int, max_rows: int | None = N
 def build_document_map(docx_path: str | Path, max_preview: int = 500, include_text: bool = False) -> dict[str, Any]:
     tree = load_document_tree(docx_path)
     root = tree.getroot()
+    styles = _load_paragraph_styles(docx_path)
+    toc_paragraphs = _toc_paragraph_indices(root, styles)
     paragraphs = []
     for idx, p in enumerate(root.xpath("//w:body//w:p", namespaces=NS), start=1):
         txt = paragraph_text(p)
         style_id = _style_id_for_paragraph(p)
+        is_toc = idx in toc_paragraphs
         item = {
             "paragraph_index": idx,
             "paraId": p.get(qn("w14:paraId")),
             "style_id": style_id,
-            "heading_level": _heading_level(style_id),
+            "style_name": _style_name_for_id(styles, style_id),
+            "heading_level": None if is_toc else _heading_level(style_id, styles, paragraph=p),
+            "is_toc": is_toc,
             "content_control_tag": _ancestor_sdt_tag(p),
             "table_index": _ancestor_table_index(p, root),
             "text_preview": txt[:max_preview],
@@ -2525,18 +2714,25 @@ def list_styles(docx_path: str | Path) -> dict[str, Any]:
     if not _zip_has(docx_path, STYLES_XML):
         return {"styles": [], "style_count": 0}
     tree = _parse_xml(_zip_read(docx_path, STYLES_XML))
+    paragraph_styles = _load_paragraph_styles(docx_path)
     styles = []
     for st in tree.getroot().xpath("//w:style", namespaces=NS):
         name = st.find("./w:name", namespaces=NS)
         based = st.find("./w:basedOn", namespaces=NS)
         nxt = st.find("./w:next", namespaces=NS)
+        outline = st.find("./w:pPr/w:outlineLvl", namespaces=NS)
+        style_id = st.get(qn("w:styleId"))
+        paragraph_info = paragraph_styles.get(style_id or "")
         styles.append({
-            "style_id": st.get(qn("w:styleId")),
+            "style_id": style_id,
             "type": st.get(qn("w:type")),
             "default": st.get(qn("w:default")),
             "name": name.get(qn("w:val")) if name is not None else None,
             "based_on": based.get(qn("w:val")) if based is not None else None,
             "next": nxt.get(qn("w:val")) if nxt is not None else None,
+            "outline_level": outline.get(qn("w:val")) if outline is not None else None,
+            "heading_level": paragraph_info.get("heading_level") if paragraph_info else None,
+            "is_toc": bool(paragraph_info.get("is_toc")) if paragraph_info else _is_toc_style(style_id),
         })
     return {"style_count": len(styles), "styles": styles}
 

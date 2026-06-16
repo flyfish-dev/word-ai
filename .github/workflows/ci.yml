@@ -33,6 +33,7 @@ jobs:
           PYTHONPATH=. python -m compileall word_ai_mcp scripts
           PYTHONPATH=. python scripts/run_smoke_test.py
           PYTHONPATH=. python scripts/run_structure_regression.py
+          PYTHONPATH=. python scripts/run_outline_regression.py
           PYTHONPATH=. python scripts/run_word_session_smoke.py
           PYTHONPATH=. python scripts/validate_word_ai_skill.py
           PYTHONPATH=. python - <<'PY'

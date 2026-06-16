@@ -107,6 +107,7 @@ Developer checks:
 ```bash
 PYTHONPATH=. .venv/bin/python scripts/run_smoke_test.py
 PYTHONPATH=. .venv/bin/python scripts/run_structure_regression.py
+PYTHONPATH=. .venv/bin/python scripts/run_outline_regression.py
 ```
 
 Build the .NET engine:
@@ -451,6 +452,7 @@ powershell -ExecutionPolicy Bypass -File scripts\start.ps1
 ```bash
 PYTHONPATH=. .venv/bin/python scripts/run_smoke_test.py
 PYTHONPATH=. .venv/bin/python scripts/run_structure_regression.py
+PYTHONPATH=. .venv/bin/python scripts/run_outline_regression.py
 ```
 
 构建 .NET 引擎：

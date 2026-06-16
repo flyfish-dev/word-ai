@@ -113,6 +113,12 @@ OfficeCLI 是可选辅助后端，不是 Word AI 的权威写入路径。MCP 只
 | `docx_extract_plain_text` | 提取全文纯文本，只用于检索/审阅，不用于重建。 |
 | `docx_export_plain_text` | 导出全文 sidecar `.txt`，不修改 DOCX。 |
 
+标题识别必须优先遵守 Word 的结构语义，而不是只看文本：
+
+- `docx_get_outline` / `docx_list_headings` 会读取 `styles.xml`，支持 `Heading1`、`标题1`、数字 styleId 但样式名为 `heading 1` 的中文/WPS 文档，以及带 `w:outlineLvl` 的自定义标题样式。
+- TOC/目录结果必须从 outline 中排除。`TOC1`、`toc 1`、`目录`、`WPSOffice 手动目录`、`TOC Heading` 样式，以及复杂 TOC 字段范围内的段落，不能作为 heading anchor。
+- `docx_list_paragraphs` / `docx_read_paragraph` 会返回 `style_name` 和 `is_toc`，用于区分目录结果与正文标题。`is_toc=true` 的段落不应作为编辑锚点。
+
 ### 表格、样式和复杂对象
 
 | 工具 | 用途 |

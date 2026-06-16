@@ -19,6 +19,7 @@ Executed locally from the project root:
 python -m compileall word_ai_mcp scripts
 PYTHONPATH=. python scripts/run_smoke_test.py
 PYTHONPATH=. python scripts/run_structure_regression.py
+PYTHONPATH=. python scripts/run_outline_regression.py
 PYTHONPATH=. python scripts/run_word_session_smoke.py
 PYTHONPATH=. python scripts/run_dotnet_regression.py
 PYTHONPATH=. python scripts/run_office_bridge_smoke.py
@@ -38,6 +39,7 @@ Results:
 - Python compilation: passed.
 - Smoke test: passed.
 - Structure regression: passed.
+- Outline regression: passed for localized heading styles, numeric heading style IDs, direct `w:outlineLvl`, and TOC field exclusion.
 - Word session command-queue smoke: passed.
 - .NET build: passed with 0 warnings and 0 errors.
 - .NET PatchSet regression: passed.
@@ -87,6 +89,25 @@ Validation summary:
 - Paragraph/table/image/field/comment/comment-reference/tracked-change/content-control/heading counts stayed stable.
 - Protected body block sequence stayed stable outside touched scopes.
 - Untouched content controls, tables, table cells, and protected paragraphs passed hash checks.
+
+## Outline Regression Evidence
+
+The outline recognizer now uses `styles.xml` style names, paragraph/direct `w:outlineLvl`, and TOC field/style exclusion instead of relying only on raw style IDs.
+
+Generated regression fixture:
+
+- Numeric style IDs `1` / `2` with style names `heading 1` / `heading 2`: recognized as levels 1 and 2.
+- Chinese style names `标题1` / `标题 2`: recognized as levels 1 and 2.
+- Direct paragraph `w:outlineLvl=2`: recognized as level 3.
+- TOC heading/result paragraphs and complex `TOC \o "1-3" \h \z \u` field range: excluded from heading anchors and marked `is_toc=true` in paragraph inventory.
+- .NET `inspect` regression on the same fixture: `heading_count=6` with no TOC headings.
+
+External real-document verification was also run against four local Chinese DOCX samples outside the repository:
+
+- A user-manual sample with numeric heading style IDs: `docx_get_outline` returned 83 headings; TOC paragraphs 13-24 were `is_toc=true` and `heading_level=null`; the first real heading appeared after the TOC.
+- A software-process specification sample: returned 18 headings using localized style names `标题1` / `标题2`; the TOC page was excluded.
+- A large database-design sample: returned 106 headings; the TOC page was excluded while body headings beginning with Chinese words such as `目录...` remained valid when not inside TOC scope.
+- A large interface-specification sample: returned 112 headings from numeric heading style IDs.
 
 ## Regression Coverage
 

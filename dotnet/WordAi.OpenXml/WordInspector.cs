@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
@@ -10,6 +11,17 @@ namespace WordAi.OpenXml;
 public sealed class WordInspector
 {
     private const string W14Ns = "http://schemas.microsoft.com/office/word/2010/wordml";
+    private static readonly Regex HeadingNamePattern = new(@"^(?:heading|标题)([1-9])$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    public sealed class ParagraphStyleInfo
+    {
+        public required string StyleId { get; init; }
+        public string? Name { get; init; }
+        public string? BasedOn { get; init; }
+        public string? OutlineLevel { get; init; }
+        public int? HeadingLevel { get; set; }
+        public bool IsToc { get; set; }
+    }
 
     public DocumentProfile Inspect(string docxPath, int previewLength = 240)
     {
@@ -41,6 +53,8 @@ public sealed class WordInspector
         using var doc = WordprocessingDocument.Open(docxPath, false);
         var main = doc.MainDocumentPart ?? throw new InvalidOperationException("Missing main document part.");
         var body = main.Document?.Body ?? throw new InvalidOperationException("Missing document body.");
+        var styles = LoadParagraphStyles(main);
+        var tocParagraphs = TocParagraphIndices(body, styles);
         var anchors = new List<Anchor>();
 
         foreach (var sdt in body.Descendants<SdtElement>())
@@ -75,7 +89,8 @@ public sealed class WordInspector
             index++;
             var text = ParagraphText(p).Trim();
             var style = p.ParagraphProperties?.ParagraphStyleId?.Val?.Value;
-            var level = HeadingLevel(style);
+            if (tocParagraphs.Contains(index)) continue;
+            var level = HeadingLevel(p, styles);
             if (level is not null && text.Length > 0)
             {
                 while (outline.Count >= level.Value) outline.RemoveAt(outline.Count - 1);
@@ -92,6 +107,8 @@ public sealed class WordInspector
                     {
                         ["paragraph_index"] = index,
                         ["paraId"] = ParaId(p),
+                        ["style_name"] = styles.TryGetValue(style ?? "", out var styleInfo) ? styleInfo.Name : null,
+                        ["is_toc"] = false,
                         ["text_sha256"] = Sha256String(text),
                     }));
             }
@@ -146,14 +163,178 @@ public sealed class WordInspector
         return string.IsNullOrEmpty(attr.Value) ? null : attr.Value;
     }
 
-    public static int? HeadingLevel(string? styleId)
+    public static IReadOnlyDictionary<string, ParagraphStyleInfo> LoadParagraphStyles(MainDocumentPart main)
+    {
+        var result = new Dictionary<string, ParagraphStyleInfo>(StringComparer.Ordinal);
+        var styles = main.StyleDefinitionsPart?.Styles;
+        if (styles is null) return result;
+
+        foreach (var style in styles.Elements<Style>().Where(s => s.Type?.Value == StyleValues.Paragraph))
+        {
+            var styleId = style.StyleId?.Value;
+            if (string.IsNullOrWhiteSpace(styleId)) continue;
+            result[styleId] = new ParagraphStyleInfo
+            {
+                StyleId = styleId,
+                Name = style.StyleName?.Val?.Value,
+                BasedOn = style.BasedOn?.Val?.Value,
+                OutlineLevel = style.StyleParagraphProperties?.OutlineLevel?.Val?.Value.ToString(),
+            };
+        }
+
+        foreach (var info in result.Values)
+        {
+            info.IsToc = IsTocStyle(info.StyleId, result);
+            info.HeadingLevel = HeadingLevel(info.StyleId, result);
+        }
+        return result;
+    }
+
+    public static IReadOnlyDictionary<string, ParagraphStyleInfo> LoadParagraphStyles(string docxPath)
+    {
+        using var doc = WordprocessingDocument.Open(docxPath, false);
+        var main = doc.MainDocumentPart ?? throw new InvalidOperationException("Missing main document part.");
+        return LoadParagraphStyles(main);
+    }
+
+    public static int? HeadingLevel(Paragraph paragraph, IReadOnlyDictionary<string, ParagraphStyleInfo>? styles = null)
+    {
+        var styleId = paragraph.ParagraphProperties?.ParagraphStyleId?.Val?.Value;
+        if (IsTocStyle(styleId, styles)) return null;
+        var direct = OutlineLevelValue(paragraph.ParagraphProperties?.OutlineLevel?.Val?.Value.ToString());
+        return direct ?? HeadingLevel(styleId, styles);
+    }
+
+    public static int? HeadingLevel(string? styleId, IReadOnlyDictionary<string, ParagraphStyleInfo>? styles = null)
     {
         if (string.IsNullOrWhiteSpace(styleId)) return null;
-        if (styleId.StartsWith("Heading", StringComparison.OrdinalIgnoreCase)
-            && int.TryParse(styleId[7..], out var n)) return n;
-        if (styleId.StartsWith("标题", StringComparison.OrdinalIgnoreCase)
-            && int.TryParse(styleId[2..], out var cn)) return cn;
+        if (IsTocStyle(styleId, styles)) return null;
+        var direct = HeadingLevelFromName(styleId);
+        if (direct is not null) return direct;
+        if (styles is not null && styles.TryGetValue(styleId, out var info))
+        {
+            var nameLevel = HeadingLevelFromName(info.Name);
+            if (nameLevel is not null) return nameLevel;
+            var outlineLevel = OutlineLevelValue(info.OutlineLevel);
+            if (outlineLevel is not null) return outlineLevel;
+        }
         return null;
+    }
+
+    public static bool IsTocStyle(string? styleId, IReadOnlyDictionary<string, ParagraphStyleInfo>? styles = null)
+    {
+        var values = new List<string>();
+        if (!string.IsNullOrWhiteSpace(styleId)) values.Add(styleId);
+        if (!string.IsNullOrWhiteSpace(styleId) && styles is not null && styles.TryGetValue(styleId, out var info) && !string.IsNullOrWhiteSpace(info.Name))
+        {
+            values.Add(info.Name);
+        }
+        foreach (var value in values)
+        {
+            var normalized = Regex.Replace(value.Trim(), @"\s+", "").ToLowerInvariant();
+            if (normalized.Length == 0) continue;
+            if (Regex.IsMatch(normalized, @"^toc\d*$", RegexOptions.IgnoreCase)) return true;
+            if (normalized == "tocheading" || normalized == "tableofcontents") return true;
+            if (normalized.StartsWith("toc", StringComparison.OrdinalIgnoreCase) && (normalized.Contains("heading", StringComparison.OrdinalIgnoreCase) || normalized[3..].All(char.IsDigit))) return true;
+            if (normalized.StartsWith("目录", StringComparison.OrdinalIgnoreCase) || normalized.StartsWith("wpsoffice手动目录", StringComparison.OrdinalIgnoreCase)) return true;
+            if (normalized.StartsWith("tableofcontents", StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        return false;
+    }
+
+    private static int? HeadingLevelFromName(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var normalized = Regex.Replace(value.Trim(), @"\s+", "");
+        var match = HeadingNamePattern.Match(normalized);
+        if (!match.Success) return null;
+        return int.TryParse(match.Groups[1].Value, out var level) ? level : null;
+    }
+
+    private static int? OutlineLevelValue(string? value)
+    {
+        if (!int.TryParse(value, out var raw)) return null;
+        return raw is >= 0 and <= 8 ? raw + 1 : null;
+    }
+
+    private static HashSet<int> TocParagraphIndices(Body body, IReadOnlyDictionary<string, ParagraphStyleInfo> styles)
+    {
+        var result = new HashSet<int>();
+        var fieldStack = new Stack<FieldContext>();
+        var index = 0;
+
+        bool ActiveTocField() => fieldStack.Any(ctx => ctx.IsToc);
+
+        foreach (var p in body.Descendants<Paragraph>())
+        {
+            index++;
+            var style = p.ParagraphProperties?.ParagraphStyleId?.Val?.Value;
+            var isToc = ActiveTocField() || IsTocStyle(style, styles) || IsTocSdtDescendant(p);
+            if (p.Descendants<SimpleField>().Any(f => IsTocFieldInstruction(f.Instruction?.Value)))
+            {
+                isToc = true;
+            }
+            foreach (var el in p.Descendants<OpenXmlElement>())
+            {
+                if (el is FieldChar fld)
+                {
+                    var kind = fld.FieldCharType?.Value;
+                    if (kind == FieldCharValues.Begin)
+                    {
+                        fieldStack.Push(new FieldContext());
+                    }
+                    else if (kind == FieldCharValues.Separate)
+                    {
+                        if (ActiveTocField()) isToc = true;
+                    }
+                    else if (kind == FieldCharValues.End)
+                    {
+                        if (ActiveTocField()) isToc = true;
+                        if (fieldStack.Count > 0) fieldStack.Pop();
+                    }
+                }
+                else if (el is FieldCode code && fieldStack.Count > 0)
+                {
+                    var ctx = fieldStack.Pop();
+                    ctx.Instruction += code.Text ?? "";
+                    if (IsTocFieldInstruction(ctx.Instruction))
+                    {
+                        ctx.IsToc = true;
+                        isToc = true;
+                    }
+                    fieldStack.Push(ctx);
+                }
+            }
+            if (ActiveTocField()) isToc = true;
+            if (isToc) result.Add(index);
+        }
+
+        return result;
+    }
+
+    private sealed class FieldContext
+    {
+        public string Instruction { get; set; } = "";
+        public bool IsToc { get; set; }
+    }
+
+    private static bool IsTocFieldInstruction(string? instr)
+        => !string.IsNullOrWhiteSpace(instr) && Regex.IsMatch(instr, @"^\s*TOC(?:\s|\\|$)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    private static bool IsTocSdtDescendant(OpenXmlElement element)
+    {
+        foreach (var sdt in element.Ancestors<SdtElement>())
+        {
+            var xml = sdt.SdtProperties?.OuterXml?.ToLowerInvariant() ?? "";
+            if (xml.Contains("table of contents", StringComparison.OrdinalIgnoreCase)
+                || xml.Contains("tableofcontents", StringComparison.OrdinalIgnoreCase)
+                || xml.Contains("目录", StringComparison.OrdinalIgnoreCase)
+                || Regex.IsMatch(xml, @"(^|[^a-z])toc([^a-z]|$)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static bool HasComplexContent(OpenXmlElement element)
