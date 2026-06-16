@@ -81,6 +81,13 @@ def main() -> int:
         outline_anchors = [a for a in outline_profile["anchors"] if a["kind"] == "heading"]
         assert outline_profile["heading_count"] == 6, outline_profile
         assert [a["text_preview"] for a in outline_anchors] == ["功能介绍", "目录管理系统", "中文一级标题", "中文二级标题", "直接大纲级别", "附录一"], outline_anchors
+
+        unclosed_outline_fixture = td / "outline-regression-unclosed-toc.docx"
+        make_fixture(unclosed_outline_fixture, close_toc=False)
+        unclosed_outline_profile = run_dotnet("inspect", str(unclosed_outline_fixture))
+        unclosed_outline_anchors = [a for a in unclosed_outline_profile["anchors"] if a["kind"] == "heading"]
+        assert unclosed_outline_profile["heading_count"] == 6, unclosed_outline_profile
+        assert [a["text_preview"] for a in unclosed_outline_anchors] == ["功能介绍", "目录管理系统", "中文一级标题", "中文二级标题", "直接大纲级别", "附录一"], unclosed_outline_anchors
         ops_tested.append("inspect_chinese_outline_without_toc")
 
         cc = list_content_controls(SRC)["content_controls"][0]

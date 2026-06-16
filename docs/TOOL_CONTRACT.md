@@ -117,6 +117,7 @@ OfficeCLI 是可选辅助后端，不是 Word AI 的权威写入路径。MCP 只
 
 - `docx_get_outline` / `docx_list_headings` 会读取 `styles.xml`，支持 `Heading1`、`标题1`、数字 styleId 但样式名为 `heading 1` 的中文/WPS 文档，以及带 `w:outlineLvl` 的自定义标题样式。
 - TOC/目录结果必须从 outline 中排除。`TOC1`、`toc 1`、`目录`、`WPSOffice 手动目录`、`TOC Heading` 样式，以及复杂 TOC 字段范围内的段落，不能作为 heading anchor。
+- TOC 字段不能无限扩张：遇到缺失 `end` 的复杂 TOC 字段时，识别器只跳过显式 TOC 样式、TOC 指令或 `_Toc` 引用段落，不能把后续正文 heading 全部视为 TOC。
 - `docx_list_paragraphs` / `docx_read_paragraph` 会返回 `style_name` 和 `is_toc`，用于区分目录结果与正文标题。`is_toc=true` 的段落不应作为编辑锚点。
 
 ### 表格、样式和复杂对象

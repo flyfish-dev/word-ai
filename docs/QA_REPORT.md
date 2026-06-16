@@ -100,6 +100,7 @@ Generated regression fixture:
 - Chinese style names `标题1` / `标题 2`: recognized as levels 1 and 2.
 - Direct paragraph `w:outlineLvl=2`: recognized as level 3.
 - TOC heading/result paragraphs and complex `TOC \o "1-3" \h \z \u` field range: excluded from heading anchors and marked `is_toc=true` in paragraph inventory.
+- Malformed/unclosed complex TOC field: guarded so the leaked field state does not consume body headings after the visible TOC block.
 - .NET `inspect` regression on the same fixture: `heading_count=6` with no TOC headings.
 
 External real-document verification was also run against four local Chinese DOCX samples outside the repository:

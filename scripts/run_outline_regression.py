@@ -85,7 +85,7 @@ def add_paragraph_style(styles_root: etree._Element, style_id: str, name: str, o
         outline.set(qn("w:val"), outline_level)
 
 
-def rewrite_fixture(path: Path) -> None:
+def rewrite_fixture(path: Path, close_toc: bool = True) -> None:
     with zipfile.ZipFile(path, "r") as zin:
         entries = {i.filename: zin.read(i.filename) for i in zin.infolist() if not i.is_dir()}
         infos = {i.filename: i for i in zin.infolist() if not i.is_dir()}
@@ -131,7 +131,8 @@ def rewrite_fixture(path: Path) -> None:
 
     clear_runs(paras[4])
     add_run_text(paras[4], "2 使用指南4")
-    add_fld_char(paras[4], "end")
+    if close_toc:
+        add_fld_char(paras[4], "end")
 
     set_direct_outline(paras[9], "2")
 
@@ -145,7 +146,7 @@ def rewrite_fixture(path: Path) -> None:
     shutil.move(tmp, path)
 
 
-def make_fixture(path: Path) -> None:
+def make_fixture(path: Path, close_toc: bool = True) -> None:
     doc = Document()
     for text in [
         "中文大纲识别回归",
@@ -162,37 +163,44 @@ def make_fixture(path: Path) -> None:
     ]:
         doc.add_paragraph(text)
     doc.save(path)
-    rewrite_fixture(path)
+    rewrite_fixture(path, close_toc=close_toc)
+
+
+def assert_outline_fixture(docx_path: Path) -> None:
+    outline = get_outline(docx_path)
+    headings = outline["headings"]
+    texts = [h["text"] for h in headings]
+    assert texts == ["功能介绍", "目录管理系统", "中文一级标题", "中文二级标题", "直接大纲级别", "附录一"], texts
+    assert [h["level"] for h in headings] == [1, 2, 1, 2, 3, 1], headings
+    assert all(not h["is_toc"] for h in headings), headings
+
+    paragraphs = list_paragraphs(docx_path, include_empty=False)["paragraphs"]
+    toc_items = [p for p in paragraphs if p["is_toc"]]
+    assert [p["text_preview"] for p in toc_items] == ["目录", "1 功能介绍3", "1.1 系统概述3", "2 使用指南4"], toc_items
+    assert all(p["heading_level"] is None for p in toc_items), toc_items
+
+    anchors = [a.to_dict() for a in list_anchors(docx_path)]
+    heading_anchor_texts = [a["text_preview"] for a in anchors if a["kind"] == "heading"]
+    assert heading_anchor_texts == texts, heading_anchor_texts
+    assert not any((a.get("text_preview") or "") in {"目录", "1 功能介绍3", "1.1 系统概述3", "2 使用指南4"} for a in anchors if a["kind"] == "heading"), anchors
+
+    section = read_heading_section(docx_path, heading_text="功能介绍")
+    assert section["heading"]["style_name"] == "heading 1"
+    assert "1 功能介绍3" not in section["text"]
+
+    info = inspect_docx(docx_path)
+    assert info["heading_count"] == 6, info
 
 
 def main() -> int:
     with TemporaryDirectory() as td:
-        docx_path = Path(td) / "outline-regression.docx"
-        make_fixture(docx_path)
+        closed_docx = Path(td) / "outline-regression.docx"
+        make_fixture(closed_docx)
+        assert_outline_fixture(closed_docx)
 
-        outline = get_outline(docx_path)
-        headings = outline["headings"]
-        texts = [h["text"] for h in headings]
-        assert texts == ["功能介绍", "目录管理系统", "中文一级标题", "中文二级标题", "直接大纲级别", "附录一"], texts
-        assert [h["level"] for h in headings] == [1, 2, 1, 2, 3, 1], headings
-        assert all(not h["is_toc"] for h in headings), headings
-
-        paragraphs = list_paragraphs(docx_path, include_empty=False)["paragraphs"]
-        toc_items = [p for p in paragraphs if p["is_toc"]]
-        assert [p["text_preview"] for p in toc_items] == ["目录", "1 功能介绍3", "1.1 系统概述3", "2 使用指南4"], toc_items
-        assert all(p["heading_level"] is None for p in toc_items), toc_items
-
-        anchors = [a.to_dict() for a in list_anchors(docx_path)]
-        heading_anchor_texts = [a["text_preview"] for a in anchors if a["kind"] == "heading"]
-        assert heading_anchor_texts == texts, heading_anchor_texts
-        assert not any((a.get("text_preview") or "") in {"目录", "1 功能介绍3", "1.1 系统概述3", "2 使用指南4"} for a in anchors if a["kind"] == "heading"), anchors
-
-        section = read_heading_section(docx_path, heading_text="功能介绍")
-        assert section["heading"]["style_name"] == "heading 1"
-        assert "1 功能介绍3" not in section["text"]
-
-        info = inspect_docx(docx_path)
-        assert info["heading_count"] == 6, info
+        unclosed_docx = Path(td) / "outline-regression-unclosed-toc.docx"
+        make_fixture(unclosed_docx, close_toc=False)
+        assert_outline_fixture(unclosed_docx)
 
     print("outline regression passed")
     return 0

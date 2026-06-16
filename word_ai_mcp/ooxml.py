@@ -234,6 +234,22 @@ def _is_toc_field_instruction(instr: str | None) -> bool:
     return bool(re.match(r"^\s*TOC(?:\s|\\|$)", instr, re.I))
 
 
+def _has_toc_field_instruction(p: etree._Element) -> bool:
+    for fld in p.xpath(".//w:fldSimple", namespaces=NS):
+        if _is_toc_field_instruction(fld.get(qn("w:instr"))):
+            return True
+    for instr in p.xpath(".//w:instrText", namespaces=NS):
+        if _is_toc_field_instruction(instr.text or ""):
+            return True
+    return False
+
+
+def _has_toc_reference_field(p: etree._Element) -> bool:
+    values = [fld.get(qn("w:instr")) or "" for fld in p.xpath(".//w:fldSimple", namespaces=NS)]
+    values.extend(instr.text or "" for instr in p.xpath(".//w:instrText", namespaces=NS))
+    return any(re.search(r"\b(?:PAGEREF|HYPERLINK)\b.*_Toc", value, re.I) for value in values)
+
+
 def _is_toc_style(style_id: str | None, styles: dict[str, dict[str, Any]] | None = None) -> bool:
     values = [style_id or ""]
     if styles and style_id and style_id in styles:
@@ -334,7 +350,12 @@ def _toc_paragraph_indices(root: etree._Element, styles: dict[str, dict[str, Any
 
     for idx, p in enumerate(paragraphs, start=1):
         style_id = _style_id_for_paragraph(p)
-        is_toc = active_toc_field() or _is_toc_style(style_id, styles) or _is_toc_sdt_descendant(p)
+        explicit_toc = _is_toc_style(style_id, styles) or _is_toc_sdt_descendant(p) or _has_toc_field_instruction(p) or _has_toc_reference_field(p)
+        if active_toc_field() and not explicit_toc and paragraph_text(p).strip():
+            # Some DOCX producers leave the TOC complex field unclosed. Do not let a
+            # leaked TOC field consume the body outline after the visible TOC block.
+            field_stack = [ctx for ctx in field_stack if not ctx.get("is_toc")]
+        is_toc = active_toc_field() or explicit_toc
         for fld in p.xpath(".//w:fldSimple", namespaces=NS):
             if _is_toc_field_instruction(fld.get(qn("w:instr"))):
                 is_toc = True

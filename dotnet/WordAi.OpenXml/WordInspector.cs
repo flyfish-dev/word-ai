@@ -264,12 +264,23 @@ public sealed class WordInspector
         var index = 0;
 
         bool ActiveTocField() => fieldStack.Any(ctx => ctx.IsToc);
+        void ClearLeakedTocFields()
+        {
+            fieldStack = new Stack<FieldContext>(fieldStack.Reverse().Where(ctx => !ctx.IsToc));
+        }
 
         foreach (var p in body.Descendants<Paragraph>())
         {
             index++;
             var style = p.ParagraphProperties?.ParagraphStyleId?.Val?.Value;
-            var isToc = ActiveTocField() || IsTocStyle(style, styles) || IsTocSdtDescendant(p);
+            var explicitToc = IsTocStyle(style, styles) || IsTocSdtDescendant(p) || HasTocFieldInstruction(p) || HasTocReferenceField(p);
+            if (ActiveTocField() && !explicitToc && !string.IsNullOrWhiteSpace(ParagraphText(p)))
+            {
+                // Some DOCX producers leave the TOC complex field unclosed. Do not
+                // let a leaked TOC field consume the body outline after the visible TOC block.
+                ClearLeakedTocFields();
+            }
+            var isToc = ActiveTocField() || explicitToc;
             if (p.Descendants<SimpleField>().Any(f => IsTocFieldInstruction(f.Instruction?.Value)))
             {
                 isToc = true;
@@ -320,6 +331,20 @@ public sealed class WordInspector
 
     private static bool IsTocFieldInstruction(string? instr)
         => !string.IsNullOrWhiteSpace(instr) && Regex.IsMatch(instr, @"^\s*TOC(?:\s|\\|$)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    private static bool HasTocFieldInstruction(Paragraph paragraph)
+        => paragraph.Descendants<SimpleField>().Any(f => IsTocFieldInstruction(f.Instruction?.Value))
+           || paragraph.Descendants<FieldCode>().Any(code => IsTocFieldInstruction(code.Text));
+
+    private static bool HasTocReferenceField(Paragraph paragraph)
+    {
+        static bool Match(string? value)
+            => !string.IsNullOrWhiteSpace(value)
+               && Regex.IsMatch(value, @"\b(?:PAGEREF|HYPERLINK)\b.*_Toc", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+        return paragraph.Descendants<SimpleField>().Any(f => Match(f.Instruction?.Value))
+               || paragraph.Descendants<FieldCode>().Any(code => Match(code.Text));
+    }
 
     private static bool IsTocSdtDescendant(OpenXmlElement element)
     {
