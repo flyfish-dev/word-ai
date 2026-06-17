@@ -200,7 +200,7 @@ Word session smoke:
 - `word_session_apply_patchset` queued a live apply command for a content-control PatchSet.
 - `word_session_rollback` loaded the apply command's generated rollback PatchSet and queued the rollback command.
 
-Browser verification against `http://localhost:3000/taskpane.html`:
+Browser verification against `http://localhost:3100/taskpane.html`:
 
 - Page loaded with no console errors or warnings.
 - Bridge connected through same-origin `/bridge` proxy.

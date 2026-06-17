@@ -6,11 +6,11 @@
   <DefaultLocale>zh-CN</DefaultLocale>
   <DisplayName DefaultValue="Word AI Anchors"/>
   <Description DefaultValue="Create and manage content-control anchors for structure-preserving AI editing."/>
-  <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-64.png"/>
-  <SupportUrl DefaultValue="https://localhost:3000"/>
-  <AppDomains><AppDomain>https://localhost:3000</AppDomain></AppDomains>
+  <IconUrl DefaultValue="https://localhost:3100/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://localhost:3100/assets/icon-64.png"/>
+  <SupportUrl DefaultValue="https://localhost:3100"/>
+  <AppDomains><AppDomain>https://localhost:3100</AppDomain></AppDomains>
   <Hosts><Host Name="Document"/></Hosts>
-  <DefaultSettings><SourceLocation DefaultValue="https://localhost:3000/taskpane.html"/></DefaultSettings>
+  <DefaultSettings><SourceLocation DefaultValue="https://localhost:3100/taskpane.html"/></DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
 </OfficeApp>

@@ -82,6 +82,10 @@ def make_handler(root: str, allow_write: bool, token: str, allowed_roots: list[s
         "https://localhost:3000",
         "http://127.0.0.1:3000",
         "https://127.0.0.1:3000",
+        "http://localhost:3100",
+        "https://localhost:3100",
+        "http://127.0.0.1:3100",
+        "https://127.0.0.1:3100",
         "http://localhost:5173",
         "https://localhost:5173",
         "null",
@@ -115,7 +119,7 @@ def make_handler(root: str, allow_write: bool, token: str, allowed_roots: list[s
             if origin and self._origin_allowed():
                 self.send_header("Access-Control-Allow-Origin", origin)
             elif not origin:
-                self.send_header("Access-Control-Allow-Origin", "http://localhost:3000")
+                self.send_header("Access-Control-Allow-Origin", "https://localhost:3100")
             self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Word-AI-Token, Authorization")

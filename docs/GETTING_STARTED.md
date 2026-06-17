@@ -231,7 +231,7 @@ cd office-addin
 npm run dev
 ```
 
-Sideload `office-addin/manifest.xml` in Word. For browser-only debugging:
+Sideload `office-addin/manifest.xml` in Word. The default live-session taskpane URL is `https://localhost:3100/taskpane.html`. For browser-only debugging:
 
 ```bash
 npm run dev:http
@@ -454,7 +454,7 @@ cd office-addin
 npm run dev
 ```
 
-在 Word 中加载 `office-addin/manifest.xml`，并在 taskpane 中填入 bridge 启动时打印的 token。
+在 Word 中加载 `office-addin/manifest.xml`，默认 live-session taskpane 地址为 `https://localhost:3100/taskpane.html`，并在 taskpane 中填入 bridge 启动时打印的 token。
 
 浏览器调试只能验证 taskpane UI 和 bridge 连接，不能真正执行 Word host 的 `Word.run(...)`。要让 Codex 编辑当前打开文档，必须在 Microsoft Word 中加载 taskpane，连接 bridge，确认出现 `Live session`，然后让 Codex 调用 `word_session_*` 工具。
 

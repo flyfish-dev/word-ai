@@ -302,7 +302,7 @@ cd office-addin
 npm run dev
 ```
 
-Then sideload `office-addin/manifest.xml` in Word. The taskpane runs at `https://localhost:3000/taskpane.html` and proxies `/bridge/*` to the local bridge. The bridge prints a local token at startup. Use that token in the taskpane.
+Then sideload `office-addin/manifest.xml` in Word. The taskpane runs at `https://localhost:3100/taskpane.html` by default and proxies `/bridge/*` to the local bridge. The bridge prints a local token at startup. Use that token in the taskpane.
 
 Once connected inside Word, the taskpane registers a live session under `.wordai/sessions`. Codex can then use:
 

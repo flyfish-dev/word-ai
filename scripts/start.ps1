@@ -15,7 +15,7 @@ if (-not (Test-Path $VenvPython)) {
 $BridgeHost = if ($env:WORD_AI_BRIDGE_HOST) { $env:WORD_AI_BRIDGE_HOST } else { "127.0.0.1" }
 $BridgePort = if ($env:WORD_AI_BRIDGE_PORT) { $env:WORD_AI_BRIDGE_PORT } else { "8765" }
 $TaskpaneHost = if ($env:WORD_AI_TASKPANE_HOST) { $env:WORD_AI_TASKPANE_HOST } else { "localhost" }
-$TaskpanePort = if ($env:WORD_AI_TASKPANE_PORT) { $env:WORD_AI_TASKPANE_PORT } else { "3000" }
+$TaskpanePort = if ($env:WORD_AI_TASKPANE_PORT) { $env:WORD_AI_TASKPANE_PORT } else { "3100" }
 $RunDir = Join-Path $Root ".wordai\run"
 $TokenPath = Join-Path $Root ".wordai\bridge.token"
 New-Item -ItemType Directory -Force -Path $RunDir | Out-Null
