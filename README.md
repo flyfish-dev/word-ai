@@ -66,7 +66,7 @@ MCP Registry details:
 
 - Server name: `io.github.flyfish-dev/word-ai`
 - Registry metadata: [server.json](server.json)
-- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb`
+- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.4/word-ai-0.8.4.mcpb`
 - Registry latest API: `https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
 
 Install the Skill and full local runtime:
@@ -176,7 +176,7 @@ After installation, start a new agent session or restart the client if the skill
 Word AI is published for discovery through the official MCP Registry and MCPB distribution. Prefer this channel for MCP host installation because it carries standardized server metadata, versioning, transport details, and provenance:
 
 - MCP server name: `io.github.flyfish-dev/word-ai`
-- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb`
+- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.4/word-ai-0.8.4.mcpb`
 - Registry metadata: [server.json](server.json)
 - Publishing guide: [MCP Registry Publishing](docs/REGISTRY_PUBLISHING.md)
 
@@ -371,6 +371,7 @@ docx_health_check
 - [QA Report](docs/QA_REPORT.md)
 - [Validation Matrix](docs/VALIDATION_MATRIX.md)
 - [MCP Registry Publishing](docs/REGISTRY_PUBLISHING.md)
+- [v0.8.4 Changelog](docs/CHANGELOG_V084.md)
 - [v0.8.3 Changelog](docs/CHANGELOG_V083.md)
 - [v0.8.1 Changelog](docs/CHANGELOG_V081.md)
 - [v0.8.0 Changelog](docs/CHANGELOG_V080.md)

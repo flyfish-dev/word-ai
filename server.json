@@ -7,12 +7,12 @@
     "url": "https://github.com/flyfish-dev/word-ai",
     "source": "github"
   },
-  "version": "0.8.3",
+  "version": "0.8.4",
   "packages": [
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb",
-      "fileSha256": "390675ba320b4fc4dad9202fdb61503a798b29221be2873f25665e3bbb6c2fb3",
+      "identifier": "https://github.com/flyfish-dev/word-ai/releases/download/v0.8.4/word-ai-0.8.4.mcpb",
+      "fileSha256": "c9c41c870ea32983fd3ea5961844c3a516c87158e5061afcbf8bf6af3d02267f",
       "transport": {
         "type": "stdio"
       }

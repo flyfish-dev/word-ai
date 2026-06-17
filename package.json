@@ -1,6 +1,6 @@
 {
   "name": "@flyfish-dev/word-ai",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "description": "Structure-preserving Word DOCX editing MCP server and Office.js bridge for AI agents",
   "license": "AGPL-3.0-or-later",
   "homepage": "https://github.com/flyfish-dev/word-ai#readme",

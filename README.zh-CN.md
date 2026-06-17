@@ -46,7 +46,7 @@ MCP Registry 信息：
 
 - MCP server 名称：`io.github.flyfish-dev/word-ai`
 - Registry 元数据：[server.json](server.json)
-- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb`
+- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.4/word-ai-0.8.4.mcpb`
 - Registry latest API：`https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
 
 安装 Skill 和完整本地运行时：
@@ -155,7 +155,7 @@ python3 scripts/install_agent_skills.py --project
 Word AI 已通过官方 MCP Registry 和 MCPB 包进行全球发现和安装。对于 MCP host，这是优先推荐渠道，因为它提供标准化 server 元数据、版本、transport 与来源验证：
 
 - MCP server 名称：`io.github.flyfish-dev/word-ai`
-- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb`
+- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.4/word-ai-0.8.4.mcpb`
 - Registry 元数据：[server.json](server.json)
 - 发布说明：[MCP Registry 发布说明](docs/REGISTRY_PUBLISHING.zh-CN.md)
 
@@ -297,6 +297,7 @@ docx_health_check
 - [QA 验证报告](docs/QA_REPORT.md)
 - [验证矩阵](docs/VALIDATION_MATRIX.md)
 - [MCP Registry 发布说明](docs/REGISTRY_PUBLISHING.zh-CN.md)
+- [v0.8.4 变更记录](docs/CHANGELOG_V084.md)
 - [v0.8.3 变更记录](docs/CHANGELOG_V083.md)
 - [v0.8.1 变更记录](docs/CHANGELOG_V081.md)
 - [v0.8.0 变更记录](docs/CHANGELOG_V080.md)
