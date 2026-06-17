@@ -18,6 +18,7 @@ from typing import Any, Iterable
 
 from lxml import etree
 
+from .patchset import normalize_patchset
 from .types import Anchor, ValidationIssue, ValidationReport
 
 W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
@@ -1264,6 +1265,7 @@ def _wrap_paragraph_with_sdt(p: etree._Element, tag: str, alias: str | None = No
 
 def assess_patchset(docx_path: str | Path, patchset: dict[str, Any]) -> dict[str, Any]:
     docx_path = Path(docx_path)
+    patchset = normalize_patchset(patchset)
     operations = patchset.get("operations") or []
     guard = patchset.get("guard") or {}
     require_preconditions = bool(guard.get("require_preconditions", False))
@@ -1369,6 +1371,7 @@ def apply_patchset(docx_path: str | Path, patchset: dict[str, Any], output_path:
     recommended.
     """
     docx_path = Path(docx_path)
+    patchset = normalize_patchset(patchset)
     source_sha = patchset.get("source_sha256")
     if source_sha and source_sha != _sha(docx_path.read_bytes()):
         raise ValueError("patchset.source_sha256 does not match current DOCX; refusing stale write")
@@ -2292,6 +2295,7 @@ def table_to_csv(docx_path: str | Path, table_index: int, out_path: str | Path |
 
 
 def validate_with_patchset(source_docx: str | Path, target_docx: str | Path, patchset: dict[str, Any], strict: bool = True) -> ValidationReport:
+    patchset = normalize_patchset(patchset)
     assessment = assess_patchset(source_docx, patchset)
     allowed_part_changes = {DOCUMENT_XML}
     allowed_count_changes: set[str] = set()

@@ -68,6 +68,7 @@ from .openxml_engine import (
     mark_python_result,
     select_engine,
 )
+from .patchset import normalize_patchset
 from .session_store import (
     enqueue_command,
     get_command,
@@ -698,11 +699,11 @@ class WordAiMcpServer:
         return self._enqueue_word_session_command(args, "read_content_control", {"tag": args["tag"]})
 
     def tool_word_session_preview_patchset(self, args: JSON) -> Any:
-        return self._enqueue_word_session_command(args, "preview_patchset", {"patchset": args["patchset"]})
+        return self._enqueue_word_session_command(args, "preview_patchset", {"patchset": normalize_patchset(args["patchset"])})
 
     def tool_word_session_apply_patchset(self, args: JSON) -> Any:
         self._ensure_write()
-        return self._enqueue_word_session_command(args, "apply_patchset", {"patchset": args["patchset"]})
+        return self._enqueue_word_session_command(args, "apply_patchset", {"patchset": normalize_patchset(args["patchset"])})
 
     def tool_word_session_wrap_selection(self, args: JSON) -> Any:
         self._ensure_write()
@@ -722,7 +723,7 @@ class WordAiMcpServer:
         return self._enqueue_word_session_command(
             args,
             "apply_patchset",
-            {"patchset": rollback_patchset, "rollback_of_command_id": source_command_id},
+            {"patchset": normalize_patchset(rollback_patchset), "rollback_of_command_id": source_command_id},
         )
 
     def tool_word_session_command_status(self, args: JSON) -> Any:

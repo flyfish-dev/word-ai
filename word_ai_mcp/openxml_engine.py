@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .patchset import normalize_patchset
+
 
 JSON = dict[str, Any]
 ENGINE_CHOICES = {"auto", "dotnet", "python"}
@@ -243,18 +245,21 @@ def _write_json_temp(data: Any, directory: Path, suffix: str) -> Path:
 
 
 def dotnet_assess_patchset(docx_path: str | Path, patchset: JSON, *, root: str | Path | None = None) -> JSON:
+    patchset = normalize_patchset(patchset)
     with tempfile.TemporaryDirectory(prefix="word-ai-openxml-") as tmp:
         patch_path = _write_json_temp(patchset, Path(tmp), ".patchset.json")
         return _run_dotnet(["assess", str(docx_path), str(patch_path)], root=root)
 
 
 def dotnet_dry_run_patchset(docx_path: str | Path, patchset: JSON, keep_output: bool = False, *, root: str | Path | None = None) -> JSON:
+    patchset = normalize_patchset(patchset)
     with tempfile.TemporaryDirectory(prefix="word-ai-openxml-") as tmp:
         patch_path = _write_json_temp(patchset, Path(tmp), ".patchset.json")
         return _run_dotnet(["dry-run", str(docx_path), str(patch_path), str(bool(keep_output)).lower()], root=root)
 
 
 def dotnet_apply_patchset(docx_path: str | Path, patchset: JSON, output_path: str | Path | None = None, *, root: str | Path | None = None) -> JSON:
+    patchset = normalize_patchset(patchset)
     target = str(output_path or default_output_path(docx_path))
     with tempfile.TemporaryDirectory(prefix="word-ai-openxml-") as tmp:
         patch_path = _write_json_temp(patchset, Path(tmp), ".patchset.json")

@@ -24,6 +24,7 @@ AI systems are good at generating text, but Word documents are structured packag
 
 - **63 MCP tools** for DOCX inspection, anchors, headings, paragraphs, tables, fields, images, comments, revisions, PatchSet planning, dry-run, apply, validation, rollback, diff, live Word session editing, and optional read-only OfficeCLI evidence.
 - **PatchSet-only writes**. No full document rebuilds, no Markdown/HTML round-trips, and no direct source overwrite by default.
+- **Agent-friendly PatchSet normalization** for common aliases such as `operation`, `target_tag`, `new_text`, `text_sha256`, and camelCase operation names, while preserving the canonical safety gates.
 - **Content-control first editing** using stable Word content control tags such as `WORD-AI:SRS:1.0:overview`.
 - **Strong preconditions** with `source_sha256`, `expected_old_sha256`, and `expected_old_text`.
 - **Structure validation** for package parts, content controls, tables, paragraphs, fields, comments, images, revisions, and protected body blocks.

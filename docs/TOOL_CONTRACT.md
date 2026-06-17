@@ -196,6 +196,8 @@ OfficeCLI 是可选辅助后端，不是 Word AI 的权威写入路径。MCP 只
 
 ## PatchSet 操作白名单
 
+所有 PatchSet 入口都会先做轻量归一化，兼容部分 Agent 常见写法，例如 `operation` / `operation_type` / `type` / `action` 作为 `op`，`replaceContentControlText` / `replace-content-control-text` 作为 `replace_content_control_text`，以及 `target_tag`、`new_text`、`text_sha256` 等字段别名。归一化只发生在输入边界，不新增写入操作，不跳过 `assess`、`dry-run`、hash 前置条件、验证、审计和回滚。正式文档和技能仍应优先生成下列 canonical PatchSet。
+
 ### 内容控件替换
 
 ```json
