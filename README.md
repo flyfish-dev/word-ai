@@ -68,14 +68,14 @@ MCP Registry details:
 
 - Server name: `io.github.flyfish-dev/word-ai`
 - Registry metadata: [server.json](server.json)
-- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.5/word-ai-0.8.5.mcpb`
+- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.6/word-ai-0.8.6.mcpb`
 - Registry latest API: `https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
 
 Fast local setup with the standalone quickstart bundle:
 
 ```bash
-tar -xzf word-ai-quickstart-0.8.5-osx-arm64.tar.gz
-cd word-ai-quickstart-0.8.5-osx-arm64
+tar -xzf word-ai-quickstart-0.8.6-osx-arm64.tar.gz
+cd word-ai-quickstart-0.8.6-osx-arm64
 
 ./word-ai install-skill
 ./word-ai codex-config --output .wordai/codex-config.toml
@@ -149,7 +149,7 @@ Offline file transactions use the .NET Open XML backend by default when it is av
 3. Local source project via `dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj`.
 4. Python OOXML fallback only when .NET is unavailable and `WORD_AI_ENGINE=auto`.
 
-MCPB and GitHub Release assets include self-contained native backends for `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. Standalone quickstart bundles are built for standard hosted platforms: `linux-x64`, `linux-arm64`, `osx-arm64`, `osx-x64`, `win-x64`, and `win-arm64`. Word AI detects the current RID, including Linux glibc vs musl for native backend loading, and loads the matching binary automatically. The npm launcher keeps the package small: on first run it downloads only the current-platform native archive from the GitHub Release, verifies the SHA-256 checksum, caches it under the user cache, and sets `WORD_AI_DOTNET_NATIVE_DIR`. Advanced deployments can override detection with `WORD_AI_DOTNET_RID`, `WORD_AI_DOTNET_EXE`, or `WORD_AI_DOTNET_NATIVE_DIR`; set `WORD_AI_SKIP_NATIVE_DOWNLOAD=1` to disable npm native downloads.
+MCPB includes self-contained native backends for `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. Standalone quickstart bundles are built for standard hosted platforms: `linux-x64`, `linux-arm64`, `osx-arm64`, `osx-x64`, `win-x64`, and `win-arm64`, with the matching Open XML backend linked into the single-file executable. Word AI detects the current RID, including Linux glibc vs musl for native backend loading, and loads the matching binary automatically. The npm launcher keeps the package small: on first run it downloads the current-platform quickstart bundle from GitHub Releases and executes the bundled `word-ai`. Advanced deployments can override detection with `WORD_AI_DOTNET_RID`, `WORD_AI_DOTNET_EXE`, or `WORD_AI_DOTNET_NATIVE_DIR`; set `WORD_AI_NPM_USE_SOURCE_BOOTSTRAP=1` only when you want the legacy Python venv npm path.
 
 Control it with `WORD_AI_ENGINE=auto|dotnet|python`, or pass `engine` to `docx_assess_patchset`, `docx_dry_run_patchset`, `docx_apply_patchset`, and `docx_validate`. Use `WORD_AI_ENGINE=dotnet` in production to fail fast instead of silently falling back.
 
@@ -191,7 +191,7 @@ After installation, start a new agent session or restart the client if the skill
 Word AI is published for discovery through the official MCP Registry and MCPB distribution. Prefer this channel for MCP host installation because it carries standardized server metadata, versioning, transport details, and provenance:
 
 - MCP server name: `io.github.flyfish-dev/word-ai`
-- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.5/word-ai-0.8.5.mcpb`
+- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.6/word-ai-0.8.6.mcpb`
 - Registry metadata: [server.json](server.json)
 - Publishing guide: [MCP Registry Publishing](docs/REGISTRY_PUBLISHING.md)
 - Standalone and quickstart guide: [Distribution](docs/DISTRIBUTION.md)
@@ -235,7 +235,7 @@ word-ai --root "$PWD" doctor
 word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
 ```
 
-The first npm run creates a local Python virtual environment under the user cache, installs Word AI Python dependencies automatically, and downloads the current-platform .NET native backend from the GitHub Release with checksum verification. Set `WORD_AI_PYTHON=/path/to/python3.10+` if Python discovery needs help.
+The first npm run downloads the current-platform quickstart bundle from GitHub Releases, caches it under the user cache, and executes the bundled standalone `word-ai`. No Python venv, pip install, or separate Open XML backend download is required on the default npm path. Set `WORD_AI_NPM_USE_SOURCE_BOOTSTRAP=1` only when you explicitly want the legacy Python venv bootstrap path.
 
 ## Use With Codex MCP
 
@@ -388,6 +388,7 @@ docx_health_check
 - [QA Report](docs/QA_REPORT.md)
 - [Validation Matrix](docs/VALIDATION_MATRIX.md)
 - [MCP Registry Publishing](docs/REGISTRY_PUBLISHING.md)
+- [v0.8.6 Changelog](docs/CHANGELOG_V086.md)
 - [v0.8.5 Changelog](docs/CHANGELOG_V085.md)
 - [v0.8.4 Changelog](docs/CHANGELOG_V084.md)
 - [v0.8.3 Changelog](docs/CHANGELOG_V083.md)

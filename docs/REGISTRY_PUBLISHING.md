@@ -23,23 +23,28 @@ Build the deterministic MCPB bundle:
 ```bash
 scripts/publish_dotnet.sh --all
 PYTHONPATH=. python scripts/verify_native_backends.py --require-all
-PYTHONPATH=. python scripts/package_native_assets.py --version 0.8.5
-PYTHONPATH=. python scripts/build_mcpb.py --version 0.8.5 --out dist/word-ai-0.8.5.mcpb
-shasum -a 256 dist/word-ai-0.8.5.mcpb
+PYTHONPATH=. python scripts/build_mcpb.py --version 0.8.6 --out dist/word-ai-0.8.6.mcpb
+shasum -a 256 dist/word-ai-0.8.6.mcpb
 ```
 
-The release RID set is `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. When `dist/native/<rid>/WordAi.OpenXml` or `WordAi.OpenXml.exe` exists before the MCPB build, the native .NET Open XML backend is bundled and selected before DLL/project/Python fallback. The npm package intentionally does not embed all native backends; its launcher downloads the current-platform GitHub Release archive, verifies SHA-256, caches it under the user cache, and exposes it through `WORD_AI_DOTNET_NATIVE_DIR`. The MCPB bootstrap still requires Python 3.10+ for the MCP facade. On first run it creates `.word-ai-mcpb-venv` inside the installed bundle directory, installs Word AI dependencies there, and then starts the stdio MCP server. Bootstrap installation logs are written to stderr so stdout remains reserved for MCP JSON-RPC.
+The release RID set is `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. When `dist/native/<rid>/WordAi.OpenXml` or `WordAi.OpenXml.exe` exists before the MCPB build, the native .NET Open XML backend is bundled and selected before DLL/project/Python fallback. The npm package intentionally does not embed all native backends; its launcher downloads the current-platform quickstart bundle from GitHub Releases, caches it under the user cache, and executes the bundled standalone `word-ai`. The MCPB bootstrap still requires Python 3.10+ for the MCP facade. On first run it creates `.word-ai-mcpb-venv` inside the installed bundle directory, installs Word AI dependencies there, and then starts the stdio MCP server. Bootstrap installation logs are written to stderr so stdout remains reserved for MCP JSON-RPC.
 
-GitHub Releases also include per-RID native archives named `word-ai-openxml-<version>-<rid>.tar.gz` or `.zip`, standalone binaries named `word-ai-standalone-<version>-<rid>`, quickstart bundles named `word-ai-quickstart-<version>-<rid>`, and checksum files.
+GitHub Releases expose only the customer-facing assets: `word-ai-<version>.mcpb` plus current-platform quickstart bundles named `word-ai-quickstart-<version>-<rid>`. Open XML native backends are linked into MCPB and quickstart bundles instead of being uploaded as separate visible assets.
 
 Build the current-platform standalone and quickstart package:
 
 ```bash
 python -m pip install -r requirements-standalone.txt
 PYTHONPATH=. python scripts/build_standalone.py --rid osx-arm64 --json
-PYTHONPATH=. python scripts/package_quickstart.py --version 0.8.5 --rid osx-arm64 --json
+PYTHONPATH=. python scripts/package_quickstart.py --version 0.8.6 --rid osx-arm64 --json
 dist/standalone/osx-arm64/word-ai --version
 dist/standalone/osx-arm64/word-ai install-skill --dry-run
+```
+
+Optional maintainer-only native archives can still be built with:
+
+```bash
+PYTHONPATH=. python scripts/package_native_assets.py --version 0.8.6
 ```
 
 Build the optional local container:
@@ -67,7 +72,7 @@ npm is useful for quick no-clone startup and clients that cannot consume MCP Reg
 - Recommended scoped package: `@flyfish-dev/word-ai`
 - Unscoped compatibility package: `word-ai-mcp`
 - CLI commands: `word-ai`, `word-ai-mcp`, and `word-ai-http`
-- Native backend delivery: npm downloads only the current RID archive from the GitHub Release, verifies the checksum, and caches it. Use `WORD_AI_SKIP_NATIVE_DOWNLOAD=1` when an environment must stay offline after install.
+- Runtime delivery: npm downloads only the current RID quickstart bundle from the GitHub Release, caches it, and executes the bundled standalone. Set `WORD_AI_NPM_USE_SOURCE_BOOTSTRAP=1` only when you explicitly want the legacy Python venv bootstrap path.
 
 Example smoke check:
 
@@ -83,14 +88,14 @@ npm exec --yes --package word-ai-mcp -- word-ai-mcp --root "$PWD"
 3. Create and push a version tag:
 
    ```bash
-   git tag v0.8.5
-   git push origin v0.8.5
+   git tag v0.8.6
+   git push origin v0.8.6
    ```
 
 4. GitHub Actions publishes native .NET backends for all release RIDs and verifies the current-platform binary.
 5. The workflow builds `word-ai-<version>.mcpb`, computes its `fileSha256`, and verifies the npm payload is lightweight and does not embed oversized native binaries.
-6. The workflow uploads the MCPB file, per-RID native archives, and checksums to the GitHub Release.
-7. The standalone workflow builds and smokes single-file binaries plus quickstart bundles for `linux-x64`, `linux-arm64`, `osx-arm64`, `osx-x64`, `win-x64`, and `win-arm64`, then uploads them to the same GitHub Release.
+6. The workflow uploads only the MCPB file to the GitHub Release.
+7. The standalone workflow builds and smokes single-file binaries plus quickstart bundles for `linux-x64`, `linux-arm64`, `osx-arm64`, `osx-x64`, `win-x64`, and `win-arm64`, then uploads only the quickstart bundles to the same GitHub Release.
 8. The workflow publishes `@flyfish-dev/word-ai` and `word-ai-mcp` to npm when that version is not already present.
 9. The workflow authenticates to the MCP Registry with GitHub OIDC.
 10. `mcp-publisher validate` and `mcp-publisher publish` publish the version metadata from `server.json`.

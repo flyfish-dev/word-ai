@@ -7,16 +7,26 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 
-const SUPPORTED_NATIVE_RIDS = new Set([
+const SUPPORTED_STANDALONE_RIDS = new Set([
   "osx-arm64",
   "osx-x64",
   "linux-x64",
   "linux-arm64",
-  "linux-musl-x64",
-  "linux-musl-arm64",
   "win-x64",
   "win-arm64"
 ]);
+
+const SUPPORTED_NATIVE_RIDS = new Set([
+  ...SUPPORTED_STANDALONE_RIDS,
+  "linux-musl-x64",
+  "linux-musl-arm64"
+]);
+
+const MODULE_TO_STANDALONE = {
+  "word_ai_mcp.quickstart": ["quickstart"],
+  "word_ai_mcp.server": ["mcp"],
+  "word_ai_mcp.server_http": ["http"]
+};
 
 function packageRoot() {
   return fs.realpathSync(path.resolve(__dirname, ".."));
@@ -120,7 +130,7 @@ function downloadFile(url, outputPath) {
     ]);
     return;
   }
-  throw new Error("Neither curl nor PowerShell is available for downloading the Word AI native backend.");
+  throw new Error("Neither curl nor PowerShell is available for downloading Word AI release assets.");
 }
 
 function sha256File(filePath) {
@@ -151,6 +161,10 @@ function detectRid() {
 
 function nativeExecutableName(rid) {
   return rid && rid.startsWith("win-") ? "WordAi.OpenXml.exe" : "WordAi.OpenXml";
+}
+
+function standaloneExecutableName(rid) {
+  return rid && rid.startsWith("win-") ? "word-ai.exe" : "word-ai";
 }
 
 function findBundledNativeRoot(root, rid) {
@@ -188,6 +202,86 @@ function extractArchive(archivePath, destination) {
   throw new Error(`No extractor is available for ${archivePath}`);
 }
 
+function quickstartArchiveName(version, rid) {
+  const extension = rid.startsWith("win-") ? "zip" : "tar.gz";
+  return `word-ai-quickstart-${version}-${rid}.${extension}`;
+}
+
+function quickstartPrefix(version, rid) {
+  return `word-ai-quickstart-${version}-${rid}`;
+}
+
+function quickstartExecutable(cacheDir, version, rid) {
+  return path.join(cacheDir, quickstartPrefix(version, rid), standaloneExecutableName(rid));
+}
+
+function verifyQuickstartExecutable(cacheDir, version, rid) {
+  const prefix = quickstartPrefix(version, rid);
+  const exe = quickstartExecutable(cacheDir, version, rid);
+  const manifestPath = path.join(cacheDir, prefix, "word-ai-quickstart.json");
+  if (!fs.existsSync(exe) || !fs.existsSync(manifestPath)) {
+    return false;
+  }
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  if (manifest.version !== version || manifest.rid !== rid) {
+    return false;
+  }
+  if (manifest.executable_sha256 && sha256File(exe) !== manifest.executable_sha256) {
+    return false;
+  }
+  if (!rid.startsWith("win-")) {
+    fs.chmodSync(exe, 0o755);
+  }
+  return true;
+}
+
+function ensureStandalone(root, version) {
+  if (process.env.WORD_AI_STANDALONE_COMMAND) {
+    return path.resolve(process.env.WORD_AI_STANDALONE_COMMAND);
+  }
+  if (process.env.WORD_AI_NPM_USE_SOURCE_BOOTSTRAP === "1") {
+    return null;
+  }
+  const rid = process.env.WORD_AI_STANDALONE_RID || process.env.WORD_AI_DOTNET_RID || detectRid();
+  if (!rid || !SUPPORTED_STANDALONE_RIDS.has(rid)) {
+    return null;
+  }
+
+  const cacheDir = path.join(cacheRoot(), version, "quickstart");
+  const exe = quickstartExecutable(cacheDir, version, rid);
+  if (verifyQuickstartExecutable(cacheDir, version, rid)) {
+    return exe;
+  }
+
+  const lockDir = path.join(cacheRoot(), version, ".quickstart.lock");
+  acquireLock(lockDir);
+  try {
+    if (verifyQuickstartExecutable(cacheDir, version, rid)) {
+      return exe;
+    }
+    const archiveName = quickstartArchiveName(version, rid);
+    const baseUrl = `https://github.com/flyfish-dev/word-ai/releases/download/v${version}`;
+    const downloadDir = path.join(cacheRoot(), version, "downloads");
+    const archivePath = path.join(downloadDir, archiveName);
+    const prefix = quickstartPrefix(version, rid);
+    const targetDir = path.join(cacheDir, prefix);
+
+    console.error(`Downloading Word AI quickstart bundle ${rid}...`);
+    downloadFile(`${baseUrl}/${archiveName}`, archivePath);
+    fs.rmSync(targetDir, {recursive: true, force: true});
+    extractArchive(archivePath, cacheDir);
+    if (!verifyQuickstartExecutable(cacheDir, version, rid)) {
+      throw new Error(`Downloaded quickstart bundle did not contain a valid ${prefix}/${standaloneExecutableName(rid)}`);
+    }
+    return exe;
+  } catch (error) {
+    console.error(`Warning: could not install Word AI quickstart bundle for ${rid}: ${error.message}`);
+    return null;
+  } finally {
+    releaseLock(lockDir);
+  }
+}
+
 function ensureNativeBackend(root, version) {
   if (process.env.WORD_AI_DOTNET_EXE || process.env.WORD_AI_DOTNET_NATIVE_DIR || process.env.WORD_AI_SKIP_NATIVE_DOWNLOAD === "1") {
     return null;
@@ -203,6 +297,9 @@ function ensureNativeBackend(root, version) {
   const bundled = findBundledNativeRoot(root, rid);
   if (bundled) {
     return bundled;
+  }
+  if (process.env.WORD_AI_ENABLE_LEGACY_NATIVE_DOWNLOAD !== "1") {
+    return null;
   }
 
   const nativeRoot = path.join(cacheRoot(), version, "native");
@@ -328,9 +425,37 @@ function ensureVenv(root, version) {
   return python;
 }
 
+function runStandalone(executable, moduleName) {
+  const prefix = MODULE_TO_STANDALONE[moduleName];
+  if (!prefix) {
+    throw new Error(`Unsupported Word AI npm launcher module: ${moduleName}`);
+  }
+  const child = childProcess.spawn(executable, [...prefix, ...process.argv.slice(2)], {
+    stdio: "inherit",
+    env: process.env
+  });
+  child.on("error", (error) => {
+    console.error(error.message);
+    process.exit(1);
+  });
+  child.on("exit", (code, signal) => {
+    if (signal) {
+      process.kill(process.pid, signal);
+      return;
+    }
+    process.exit(code === null ? 1 : code);
+  });
+}
+
 function main(moduleName) {
   const root = packageRoot();
   const pkg = readPackage(root);
+  const standalone = ensureStandalone(root, pkg.version);
+  if (standalone) {
+    runStandalone(standalone, moduleName);
+    return;
+  }
+
   const nativeRoot = ensureNativeBackend(root, pkg.version);
   const python = ensureVenv(root, pkg.version);
   const env = {...process.env};

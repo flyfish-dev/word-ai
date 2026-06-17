@@ -21,6 +21,7 @@ This directory contains the design, tool contract, safety policy, and validation
 - [Stability Policy](STABILITY_POLICY.md): editing risk classes and safety boundaries.
 - [Development Plan](DEVELOPMENT_PLAN.md): roadmap for production hardening.
 - [Code Tool Catalog](CODEX_TOOL_CATALOG.md): generated MCP tool catalog.
+- [v0.8.6 Changelog](CHANGELOG_V086.md): simplified customer release assets and npm quickstart launcher.
 - [v0.8.5 Changelog](CHANGELOG_V085.md): standalone quickstart bundles and broader release smoke tests.
 - [v0.8.4 Changelog](CHANGELOG_V084.md): agent-friendly PatchSet alias normalization.
 - [v0.8.3 Changelog](CHANGELOG_V083.md): cross-platform native distribution and full release artifacts.

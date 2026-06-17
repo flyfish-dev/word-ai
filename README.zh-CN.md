@@ -48,14 +48,14 @@ MCP Registry 信息：
 
 - MCP server 名称：`io.github.flyfish-dev/word-ai`
 - Registry 元数据：[server.json](server.json)
-- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.5/word-ai-0.8.5.mcpb`
+- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.6/word-ai-0.8.6.mcpb`
 - Registry latest API：`https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
 
 使用 standalone quickstart 快速本地启动：
 
 ```bash
-tar -xzf word-ai-quickstart-0.8.5-osx-arm64.tar.gz
-cd word-ai-quickstart-0.8.5-osx-arm64
+tar -xzf word-ai-quickstart-0.8.6-osx-arm64.tar.gz
+cd word-ai-quickstart-0.8.6-osx-arm64
 
 ./word-ai install-skill
 ./word-ai codex-config --output .wordai/codex-config.toml
@@ -129,7 +129,7 @@ PYTHONPATH=. .venv/bin/python scripts/run_dotnet_regression.py
 3. 本地源码工程：`dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj`。
 4. 只有在 `WORD_AI_ENGINE=auto` 且 .NET 不可用时，才回退到 Python OOXML。
 
-MCPB 与 GitHub Release 资产会携带 `osx-arm64`、`osx-x64`、`linux-x64`、`linux-arm64`、`linux-musl-x64`、`linux-musl-arm64`、`win-x64` 和 `win-arm64` 的 self-contained native 后端。Standalone quickstart 包覆盖标准 hosted 平台：`linux-x64`、`linux-arm64`、`osx-arm64`、`osx-x64`、`win-x64` 和 `win-arm64`。运行时会自动检测当前 RID，包括 Linux glibc 与 musl 的 native 后端选择，并加载匹配二进制。npm 启动器保持轻量：首次运行只会从 GitHub Release 下载当前平台 native 压缩包，校验 SHA-256 后缓存到用户缓存目录，并设置 `WORD_AI_DOTNET_NATIVE_DIR`。高级部署可用 `WORD_AI_DOTNET_RID`、`WORD_AI_DOTNET_EXE` 或 `WORD_AI_DOTNET_NATIVE_DIR` 覆盖检测；如需禁用 npm 自动下载，可设置 `WORD_AI_SKIP_NATIVE_DOWNLOAD=1`。
+MCPB 内置 `osx-arm64`、`osx-x64`、`linux-x64`、`linux-arm64`、`linux-musl-x64`、`linux-musl-arm64`、`win-x64` 和 `win-arm64` 的 self-contained native 后端。Standalone quickstart 包覆盖标准 hosted 平台：`linux-x64`、`linux-arm64`、`osx-arm64`、`osx-x64`、`win-x64` 和 `win-arm64`，并把对应 Open XML 后端链接进单文件 executable。运行时会自动检测当前 RID，包括 Linux glibc 与 musl 的 native 后端选择，并加载匹配二进制。npm 启动器保持轻量：首次运行只会从 GitHub Release 下载当前平台 quickstart 包并执行其中的 `word-ai`。高级部署可用 `WORD_AI_DOTNET_RID`、`WORD_AI_DOTNET_EXE` 或 `WORD_AI_DOTNET_NATIVE_DIR` 覆盖检测；只有明确需要旧 npm Python venv 路径时才设置 `WORD_AI_NPM_USE_SOURCE_BOOTSTRAP=1`。
 
 可通过 `WORD_AI_ENGINE=auto|dotnet|python` 控制，也可在 `docx_assess_patchset`、`docx_dry_run_patchset`、`docx_apply_patchset`、`docx_validate` 调用中传入 `engine`。生产环境建议设置 `WORD_AI_ENGINE=dotnet`，让后端缺失时直接失败，而不是静默回退。
 
@@ -170,7 +170,7 @@ python3 scripts/install_agent_skills.py --project
 Word AI 已通过官方 MCP Registry 和 MCPB 包进行全球发现和安装。对于 MCP host，这是优先推荐渠道，因为它提供标准化 server 元数据、版本、transport 与来源验证：
 
 - MCP server 名称：`io.github.flyfish-dev/word-ai`
-- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.5/word-ai-0.8.5.mcpb`
+- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.6/word-ai-0.8.6.mcpb`
 - Registry 元数据：[server.json](server.json)
 - 发布说明：[MCP Registry 发布说明](docs/REGISTRY_PUBLISHING.zh-CN.md)
 - Standalone 与 quickstart 说明：[分发说明](docs/DISTRIBUTION.zh-CN.md)
@@ -214,7 +214,7 @@ word-ai --root "$PWD" doctor
 word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
 ```
 
-首次 npm 启动会在用户缓存目录创建 Python venv，自动安装 Word AI Python 依赖，并从 GitHub Release 下载当前平台 .NET native 后端且校验 checksum。如需指定 Python，可设置 `WORD_AI_PYTHON=/path/to/python3.10+`。
+首次 npm 启动会从 GitHub Release 下载当前平台 quickstart 包，缓存到用户缓存目录，并执行其中的 standalone `word-ai`。默认 npm 路径不需要 Python venv、pip install 或单独下载 Open XML 后端。只有明确需要旧 Python venv bootstrap 时才设置 `WORD_AI_NPM_USE_SOURCE_BOOTSTRAP=1`。
 
 ## 在 Codex 中使用
 
@@ -314,6 +314,7 @@ docx_health_check
 - [QA 验证报告](docs/QA_REPORT.md)
 - [验证矩阵](docs/VALIDATION_MATRIX.md)
 - [MCP Registry 发布说明](docs/REGISTRY_PUBLISHING.zh-CN.md)
+- [v0.8.6 变更记录](docs/CHANGELOG_V086.md)
 - [v0.8.5 变更记录](docs/CHANGELOG_V085.md)
 - [v0.8.4 变更记录](docs/CHANGELOG_V084.md)
 - [v0.8.3 变更记录](docs/CHANGELOG_V083.md)

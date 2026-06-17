@@ -25,14 +25,14 @@ MCP Registry 信息：
 
 - MCP server 名称：`io.github.flyfish-dev/word-ai`
 - Registry 元数据：[server.json](../server.json)
-- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.5/word-ai-0.8.5.mcpb`
+- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.6/word-ai-0.8.6.mcpb`
 - Registry latest API：`https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
 
 无本地依赖 quickstart：
 
 ```bash
-tar -xzf word-ai-quickstart-0.8.5-osx-arm64.tar.gz
-cd word-ai-quickstart-0.8.5-osx-arm64
+tar -xzf word-ai-quickstart-0.8.6-osx-arm64.tar.gz
+cd word-ai-quickstart-0.8.6-osx-arm64
 
 ./word-ai install-skill
 ./word-ai codex-config --output .wordai/codex-config.toml
@@ -135,7 +135,7 @@ enabled = true
 startup_timeout_sec = 60
 ```
 
-也可以把该 npm 配置中的 `@flyfish-dev/word-ai` 替换为 `word-ai-mcp`。首次 npm 启动会在用户缓存目录创建 Python venv，并自动安装 Word AI Python 依赖。如需指定 Python，可设置 `WORD_AI_PYTHON=/path/to/python3.10+`。
+也可以把该 npm 配置中的 `@flyfish-dev/word-ai` 替换为 `word-ai-mcp`。首次 npm 启动会从 GitHub Release 下载当前平台 quickstart 包，缓存后执行其中的 standalone `word-ai`；默认不需要 Python venv 或 pip install。
 
 ## 本地验证
 
@@ -163,7 +163,7 @@ Word AI 并不是要求 Python 实现生产级 DOCX writer。Python 是 MCP faca
 3. 通过 `dotnet run --project` 使用源码工程。
 4. 只有在 `WORD_AI_ENGINE=auto` 且 .NET 后端不可用时，才回退 Python OOXML。
 
-MCPB 与 GitHub Release native 后端资产包含 `osx-arm64`、`osx-x64`、`linux-x64`、`linux-arm64`、`linux-musl-x64`、`linux-musl-arm64`、`win-x64` 和 `win-arm64`。Standalone quickstart 包覆盖标准 hosted 平台：`linux-x64`、`linux-arm64`、`osx-arm64`、`osx-x64`、`win-x64` 和 `win-arm64`。Word AI 会自动选择当前平台。npm 启动器只会从 GitHub Release 下载当前平台 native 压缩包，校验 SHA-256 后缓存到用户缓存目录；只有自定义打包时才需要设置 `WORD_AI_DOTNET_RID`、`WORD_AI_DOTNET_EXE` 或 `WORD_AI_DOTNET_NATIVE_DIR`。
+MCPB 内置 `osx-arm64`、`osx-x64`、`linux-x64`、`linux-arm64`、`linux-musl-x64`、`linux-musl-arm64`、`win-x64` 和 `win-arm64` 的 native Open XML 后端。Standalone quickstart 包覆盖标准 hosted 平台：`linux-x64`、`linux-arm64`、`osx-arm64`、`osx-x64`、`win-x64` 和 `win-arm64`，并把对应后端链接进 executable。Word AI 会自动选择当前平台。npm 启动器只会从 GitHub Release 下载当前平台 quickstart 包并缓存到用户缓存目录；只有自定义打包时才需要设置 `WORD_AI_DOTNET_RID`、`WORD_AI_DOTNET_EXE` 或 `WORD_AI_DOTNET_NATIVE_DIR`。
 
 生产环境建议设置 `WORD_AI_ENGINE=dotnet`，让 .NET 后端缺失时直接失败。`WORD_AI_ENGINE=python` 只建议用于 fallback 对照或开发调试。
 

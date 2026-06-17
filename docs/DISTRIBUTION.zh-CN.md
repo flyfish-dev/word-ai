@@ -20,8 +20,8 @@ Codex、Claude Code 和兼容 Agent 客户端建议同时安装 `word-ai` Agent 
 如果用户只需要快速得到一个本地命令，从 GitHub Release 下载当前平台 quickstart 包：
 
 ```bash
-tar -xzf word-ai-quickstart-0.8.5-osx-arm64.tar.gz
-cd word-ai-quickstart-0.8.5-osx-arm64
+tar -xzf word-ai-quickstart-0.8.6-osx-arm64.tar.gz
+cd word-ai-quickstart-0.8.6-osx-arm64
 
 ./word-ai install-skill
 ./word-ai codex-config --output .wordai/codex-config.toml
@@ -61,15 +61,14 @@ word-ai http --root "$PWD" --host 127.0.0.1 --port 8765
 
 ## Release 资产
 
-每个版本发布：
+每个面向客户的版本发布：
 
 - `word-ai-<version>.mcpb`，用于 MCP Registry/MCPB 安装。
-- .NET Open XML native 后端：`osx-arm64`、`osx-x64`、`linux-x64`、`linux-arm64`、`linux-musl-x64`、`linux-musl-arm64`、`win-x64`、`win-arm64`。
-- 标准 hosted 平台 standalone 单文件：`linux-x64`、`linux-arm64`、`osx-arm64`、`osx-x64`、`win-x64`、`win-arm64`。
-- 每个 standalone 对应的 quickstart 包，包含 README、manifest 和 LICENSE。
-- SHA-256 checksum 文件。
+- 标准 hosted 平台 quickstart 包：`linux-x64`、`linux-arm64`、`osx-arm64`、`osx-x64`、`win-x64`、`win-arm64`。
 
-MCPB 会包含所有 native Open XML 后端。standalone 每个平台一个 artifact。npm 包保持轻量，首次运行只下载当前平台 native 后端。
+Open XML 后端不是单独给客户下载的文件。MCPB 内置全部支持的 .NET Open XML native 后端；每个平台 quickstart 包中的单文件 `word-ai` 也内置了当前平台后端。npm 路径变成很薄的 launcher：下载当前平台 quickstart 包并执行其中的 `word-ai`。
+
+高级维护者仍可用 `scripts/package_native_assets.py` 在本地构建每 RID 的 Open XML 后端压缩包，但这些内部后端包不再默认上传到 GitHub Release。
 
 ## 本地构建
 
@@ -88,7 +87,7 @@ PYTHONPATH=. python scripts/build_standalone.py --json
 打 quickstart 包：
 
 ```bash
-PYTHONPATH=. python scripts/package_quickstart.py --version 0.8.5 --rid osx-arm64 --json
+PYTHONPATH=. python scripts/package_quickstart.py --version 0.8.6 --rid osx-arm64 --json
 ```
 
 烟测：
@@ -104,8 +103,8 @@ dist/standalone/osx-arm64/word-ai codex-config --output /tmp/word-ai-codex.toml
 发布由 tag 触发：
 
 ```bash
-git tag v0.8.5
-git push origin v0.8.5
+git tag v0.8.6
+git push origin v0.8.6
 ```
 
-Release workflow 会构建并烟测 MCPB、native 后端、standalone 二进制、quickstart 包、Docker、npm payload 和 MCP Registry 元数据。npm 发布需要 trusted publishing 或有效的 `NPM_TOKEN`；如果 npm 权限未配置，workflow 会 warning 后继续，保证 MCP Registry 与 GitHub Release 仍可用。
+Release workflow 会构建并烟测 MCPB、native 后端、standalone 二进制、quickstart 包、Docker、npm payload 和 MCP Registry 元数据。公开 GitHub Release 只上传 MCPB 与 quickstart 包，让用户看到的下载列表保持很短。npm 发布需要 trusted publishing 或有效的 `NPM_TOKEN`；如果 npm 权限未配置，workflow 会 warning 后继续，保证 MCP Registry 与 GitHub Release 仍可用。

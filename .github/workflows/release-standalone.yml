@@ -60,13 +60,6 @@ jobs:
           PYTHONPATH=. python scripts/publish_native_backends.py "$RID" --clean --json
           PYTHONPATH=. python scripts/build_standalone.py --version "$VERSION" --rid "$RID" --json
           PYTHONPATH=. python scripts/package_quickstart.py --version "$VERSION" --rid "$RID" --json
-          mkdir -p dist/standalone-assets
-          cp "dist/standalone/$RID/word-ai${{ matrix.ext }}" "dist/standalone-assets/word-ai-standalone-${VERSION}-${RID}${{ matrix.ext }}"
-          if command -v shasum >/dev/null 2>&1; then
-            shasum -a 256 "dist/standalone-assets/word-ai-standalone-${VERSION}-${RID}${{ matrix.ext }}" "dist/quickstart/word-ai-quickstart-${VERSION}-${RID}."* > "dist/standalone-assets/word-ai-standalone-${VERSION}-${RID}-checksums.sha256"
-          else
-            sha256sum "dist/standalone-assets/word-ai-standalone-${VERSION}-${RID}${{ matrix.ext }}" "dist/quickstart/word-ai-quickstart-${VERSION}-${RID}."* > "dist/standalone-assets/word-ai-standalone-${VERSION}-${RID}-checksums.sha256"
-          fi
 
       - name: Smoke standalone executable
         shell: bash
@@ -100,4 +93,4 @@ jobs:
             fi
             sleep 5
           done
-          gh release upload "$GITHUB_REF_NAME" dist/standalone-assets/* dist/quickstart/* --clobber
+          gh release upload "$GITHUB_REF_NAME" dist/quickstart/* --clobber

@@ -20,8 +20,8 @@ For Codex, Claude Code, and compatible agent clients, install the `word-ai` Agen
 For users who just need a local command quickly, download the quickstart bundle for the current platform from the GitHub Release:
 
 ```bash
-tar -xzf word-ai-quickstart-0.8.5-osx-arm64.tar.gz
-cd word-ai-quickstart-0.8.5-osx-arm64
+tar -xzf word-ai-quickstart-0.8.6-osx-arm64.tar.gz
+cd word-ai-quickstart-0.8.6-osx-arm64
 
 ./word-ai install-skill
 ./word-ai codex-config --output .wordai/codex-config.toml
@@ -61,15 +61,14 @@ Offline DOCX editing does not require a local Python install, pip install, .NET 
 
 ## Release Assets
 
-Each release publishes:
+Each customer-facing release publishes:
 
 - `word-ai-<version>.mcpb` for MCP Registry/MCPB installation.
-- Native .NET Open XML backend archives for `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`.
-- Standalone single-file binaries for standard hosted platforms: `linux-x64`, `linux-arm64`, `osx-arm64`, `osx-x64`, `win-x64`, and `win-arm64`.
-- Quickstart bundles wrapping each standalone binary with a README, manifest, and license.
-- SHA-256 checksum files for release verification.
+- Quickstart bundles for standard hosted platforms: `linux-x64`, `linux-arm64`, `osx-arm64`, `osx-x64`, `win-x64`, and `win-arm64`.
 
-The MCPB path includes all native Open XML backends. The standalone path packages one platform per artifact. The npm path keeps the package lightweight and downloads only the current-platform native backend on first run.
+The Open XML backend is not a separate customer download. MCPB includes all supported native .NET Open XML backends, and each quickstart bundle includes the matching current-platform backend inside the single-file `word-ai` executable. The npm path is a thin launcher that downloads the current-platform quickstart bundle and executes its bundled `word-ai`.
+
+Advanced maintainers can still build per-RID Open XML archives locally with `scripts/package_native_assets.py`, but those internal backend archives are no longer uploaded to the default GitHub Release.
 
 ## Build Locally
 
@@ -88,7 +87,7 @@ PYTHONPATH=. python scripts/build_standalone.py --json
 Package the quickstart bundle:
 
 ```bash
-PYTHONPATH=. python scripts/package_quickstart.py --version 0.8.5 --rid osx-arm64 --json
+PYTHONPATH=. python scripts/package_quickstart.py --version 0.8.6 --rid osx-arm64 --json
 ```
 
 Smoke test:
@@ -104,8 +103,8 @@ dist/standalone/osx-arm64/word-ai codex-config --output /tmp/word-ai-codex.toml
 Publishing is tag-driven:
 
 ```bash
-git tag v0.8.5
-git push origin v0.8.5
+git tag v0.8.6
+git push origin v0.8.6
 ```
 
-The release workflows build and smoke test MCPB, native backends, standalone binaries, quickstart bundles, Docker, npm payloads, and MCP Registry metadata. npm publication requires trusted publishing or a valid `NPM_TOKEN`; if npm authorization is not configured, the workflow warns and continues so MCP Registry/GitHub Release remain available.
+The release workflows build and smoke test MCPB, native backends, standalone binaries, quickstart bundles, Docker, npm payloads, and MCP Registry metadata. The public GitHub Release only uploads MCPB plus quickstart bundles so users have a small, obvious download list. npm publication requires trusted publishing or a valid `NPM_TOKEN`; if npm authorization is not configured, the workflow warns and continues so MCP Registry/GitHub Release remain available.

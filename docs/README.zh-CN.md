@@ -22,6 +22,7 @@
 - [稳定性策略](STABILITY_POLICY.md)：编辑风险分级与安全边界。
 - [开发计划](DEVELOPMENT_PLAN.md)：生产化路线图。
 - [工具清单](CODEX_TOOL_CATALOG.md)：MCP tools 目录。
+- [v0.8.6 变更记录](CHANGELOG_V086.md)：简化客户发布资产，并让 npm 直接使用 quickstart launcher。
 - [v0.8.5 变更记录](CHANGELOG_V085.md)：standalone quickstart 包和更完整的发布烟测。
 - [v0.8.4 变更记录](CHANGELOG_V084.md)：Agent 友好的 PatchSet 别名归一化。
 - [v0.8.3 变更记录](CHANGELOG_V083.md)：跨平台 native 分发与完整发布产物。

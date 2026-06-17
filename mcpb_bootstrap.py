@@ -10,7 +10,7 @@ import venv
 from pathlib import Path
 
 
-DEFAULT_VERSION = "0.8.5"
+DEFAULT_VERSION = "0.8.6"
 
 
 def bundle_version(bundle_dir: Path) -> str:

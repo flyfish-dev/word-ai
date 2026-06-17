@@ -62,10 +62,6 @@ jobs:
           PYTHONPATH=. python scripts/publish_native_backends.py --all --clean --json
           PYTHONPATH=. python scripts/verify_native_backends.py --require-all
 
-      - name: Package native release assets
-        run: |
-          PYTHONPATH=. python scripts/package_native_assets.py --version "$VERSION"
-
       - name: Build deterministic MCPB
         run: |
           PYTHONPATH=. python scripts/build_mcpb.py --version "$VERSION" --out "$MCPB_PATH"
@@ -157,14 +153,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "$MCPB_PATH" dist/release-assets/* --clobber
+            gh release upload "$GITHUB_REF_NAME" "$MCPB_PATH" --clobber
           else
             NOTES="docs/CHANGELOG_V081.md"
             CANDIDATE="docs/CHANGELOG_V$(echo "$VERSION" | tr -d '.').md"
             if [ -f "$CANDIDATE" ]; then
               NOTES="$CANDIDATE"
             fi
-            gh release create "$GITHUB_REF_NAME" "$MCPB_PATH" dist/release-assets/* \
+            gh release create "$GITHUB_REF_NAME" "$MCPB_PATH" \
               --title "Word AI ${VERSION}" \
               --notes-file "$NOTES"
           fi

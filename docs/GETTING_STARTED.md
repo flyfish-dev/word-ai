@@ -26,14 +26,14 @@ MCP Registry details:
 
 - Server name: `io.github.flyfish-dev/word-ai`
 - Registry metadata: [server.json](../server.json)
-- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.5/word-ai-0.8.5.mcpb`
+- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.6/word-ai-0.8.6.mcpb`
 - Registry latest API: `https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
 
 No-dependency local quickstart:
 
 ```bash
-tar -xzf word-ai-quickstart-0.8.5-osx-arm64.tar.gz
-cd word-ai-quickstart-0.8.5-osx-arm64
+tar -xzf word-ai-quickstart-0.8.6-osx-arm64.tar.gz
+cd word-ai-quickstart-0.8.6-osx-arm64
 
 ./word-ai install-skill
 ./word-ai codex-config --output .wordai/codex-config.toml
@@ -169,7 +169,7 @@ Word AI does not require Python to implement the production DOCX writer. Python 
 3. Source project through `dotnet run --project`.
 4. Python OOXML fallback only when `WORD_AI_ENGINE=auto` and no .NET backend is available.
 
-MCPB and GitHub Release native backend assets include `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. Standalone quickstart bundles are built for standard hosted platforms: `linux-x64`, `linux-arm64`, `osx-arm64`, `osx-x64`, `win-x64`, and `win-arm64`. Word AI chooses the current platform automatically. The npm launcher downloads only the current-platform native archive from the GitHub Release, verifies its SHA-256 checksum, and caches it under the user cache; set `WORD_AI_DOTNET_RID`, `WORD_AI_DOTNET_EXE`, or `WORD_AI_DOTNET_NATIVE_DIR` only for custom packaging.
+MCPB includes native Open XML backends for `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. Standalone quickstart bundles are built for standard hosted platforms: `linux-x64`, `linux-arm64`, `osx-arm64`, `osx-x64`, `win-x64`, and `win-arm64`, with the matching backend linked into the executable. Word AI chooses the current platform automatically. The npm launcher downloads only the current-platform quickstart bundle from the GitHub Release and caches it under the user cache; set `WORD_AI_DOTNET_RID`, `WORD_AI_DOTNET_EXE`, or `WORD_AI_DOTNET_NATIVE_DIR` only for custom packaging.
 
 Set `WORD_AI_ENGINE=dotnet` in production to fail fast if the .NET backend is missing. Use `WORD_AI_ENGINE=python` only for fallback comparison or development.
 
