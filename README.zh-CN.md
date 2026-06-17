@@ -113,7 +113,7 @@ PYTHONPATH=. .venv/bin/python scripts/run_dotnet_regression.py
 3. 本地源码工程：`dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj`。
 4. 只有在 `WORD_AI_ENGINE=auto` 且 .NET 不可用时，才回退到 Python OOXML。
 
-发布包会携带 `osx-arm64`、`osx-x64`、`linux-x64`、`linux-arm64`、`linux-musl-x64`、`linux-musl-arm64`、`win-x64` 和 `win-arm64` 的 self-contained native 后端。运行时会自动检测当前 RID，包括 Linux glibc 与 musl，并加载匹配二进制。高级部署可用 `WORD_AI_DOTNET_RID`、`WORD_AI_DOTNET_EXE` 或 `WORD_AI_DOTNET_NATIVE_DIR` 覆盖检测。
+MCPB 与 GitHub Release 资产会携带 `osx-arm64`、`osx-x64`、`linux-x64`、`linux-arm64`、`linux-musl-x64`、`linux-musl-arm64`、`win-x64` 和 `win-arm64` 的 self-contained native 后端。运行时会自动检测当前 RID，包括 Linux glibc 与 musl，并加载匹配二进制。npm 启动器保持轻量：首次运行只会从 GitHub Release 下载当前平台 native 压缩包，校验 SHA-256 后缓存到用户缓存目录，并设置 `WORD_AI_DOTNET_NATIVE_DIR`。高级部署可用 `WORD_AI_DOTNET_RID`、`WORD_AI_DOTNET_EXE` 或 `WORD_AI_DOTNET_NATIVE_DIR` 覆盖检测；如需禁用 npm 自动下载，可设置 `WORD_AI_SKIP_NATIVE_DOWNLOAD=1`。
 
 可通过 `WORD_AI_ENGINE=auto|dotnet|python` 控制，也可在 `docx_assess_patchset`、`docx_dry_run_patchset`、`docx_apply_patchset`、`docx_validate` 调用中传入 `engine`。生产环境建议设置 `WORD_AI_ENGINE=dotnet`，让后端缺失时直接失败，而不是静默回退。
 
@@ -197,7 +197,7 @@ word-ai --root "$PWD" doctor
 word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
 ```
 
-首次 npm 启动会在用户缓存目录创建 Python venv，并自动安装 Word AI Python 依赖。如需指定 Python，可设置 `WORD_AI_PYTHON=/path/to/python3.10+`。
+首次 npm 启动会在用户缓存目录创建 Python venv，自动安装 Word AI Python 依赖，并从 GitHub Release 下载当前平台 .NET native 后端且校验 checksum。如需指定 Python，可设置 `WORD_AI_PYTHON=/path/to/python3.10+`。
 
 ## 在 Codex 中使用
 

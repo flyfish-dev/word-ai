@@ -149,7 +149,7 @@ Word AI 并不是要求 Python 实现生产级 DOCX writer。Python 是 MCP faca
 3. 通过 `dotnet run --project` 使用源码工程。
 4. 只有在 `WORD_AI_ENGINE=auto` 且 .NET 后端不可用时，才回退 Python OOXML。
 
-官方发布包包含 `osx-arm64`、`osx-x64`、`linux-x64`、`linux-arm64`、`linux-musl-x64`、`linux-musl-arm64`、`win-x64` 和 `win-arm64`。Word AI 会自动选择当前平台；只有自定义打包时才需要设置 `WORD_AI_DOTNET_RID`、`WORD_AI_DOTNET_EXE` 或 `WORD_AI_DOTNET_NATIVE_DIR`。
+MCPB 与 GitHub Release 资产包含 `osx-arm64`、`osx-x64`、`linux-x64`、`linux-arm64`、`linux-musl-x64`、`linux-musl-arm64`、`win-x64` 和 `win-arm64`。Word AI 会自动选择当前平台。npm 启动器只会从 GitHub Release 下载当前平台 native 压缩包，校验 SHA-256 后缓存到用户缓存目录；只有自定义打包时才需要设置 `WORD_AI_DOTNET_RID`、`WORD_AI_DOTNET_EXE` 或 `WORD_AI_DOTNET_NATIVE_DIR`。
 
 生产环境建议设置 `WORD_AI_ENGINE=dotnet`，让 .NET 后端缺失时直接失败。`WORD_AI_ENGINE=python` 只建议用于 fallback 对照或开发调试。
 

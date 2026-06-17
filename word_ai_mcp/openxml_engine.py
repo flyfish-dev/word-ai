@@ -13,6 +13,16 @@ from typing import Any
 
 JSON = dict[str, Any]
 ENGINE_CHOICES = {"auto", "dotnet", "python"}
+SUPPORTED_NATIVE_RIDS = {
+    "osx-arm64",
+    "osx-x64",
+    "linux-x64",
+    "linux-arm64",
+    "linux-musl-x64",
+    "linux-musl-arm64",
+    "win-x64",
+    "win-arm64",
+}
 
 
 class EngineUnavailable(RuntimeError):
@@ -59,7 +69,9 @@ def _linux_rid_prefix() -> str:
 
 def _runtime_id_candidates() -> list[str]:
     configured = os.environ.get("WORD_AI_DOTNET_RID")
-    candidates: list[str] = [configured.strip()] if configured and configured.strip() else []
+    configured_text = configured.strip() if configured else ""
+    configured_rid = configured_text if configured_text in SUPPORTED_NATIVE_RIDS else None
+    candidates: list[str] = [configured_rid] if configured_rid else []
     rid = _runtime_id()
     if rid:
         candidates.append(rid)

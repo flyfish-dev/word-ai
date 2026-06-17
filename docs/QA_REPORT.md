@@ -71,7 +71,8 @@ Results:
 - Deterministic MCPB build: passed for `dist/word-ai-0.8.3.mcpb`.
 - MCPB native payload check: passed; all 8 native backends are included and Unix executable modes are preserved as `0755`.
 - MCPB manifest validation with `@anthropic-ai/mcpb`: passed.
-- npm package dry-run: passed; payload includes split English/Chinese docs, all 8 native backends, and native publishing/verification scripts.
+- npm package dry-run: passed; payload includes split English/Chinese docs, the native downloader launcher, and native publishing/verification scripts, while excluding oversized `native/` and `dist/native/` payloads.
+- npm launcher bootstrap smoke: passed; bootstrap output is routed to stderr, the Python venv is created under the user cache, and the current-platform native backend is selected through `WORD_AI_DOTNET_NATIVE_DIR`.
 - MCPB bootstrap first-run stdio test: passed with `serverInfo.version=0.8.3` and 63 tools. Dependency installation logs are routed to stderr so stdout remains valid MCP JSON.
 
 ## Global Distribution Checks
@@ -79,12 +80,12 @@ Results:
 - `server.json` uses official schema `https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json`.
 - MCP server name is `io.github.flyfish-dev/word-ai`.
 - Package type is MCPB with identifier `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb`.
-- MCPB `fileSha256` is `f0cef8126e6ef76a52aa89b875cba98e40d1c34547d056dcc725bfd336d157c0`.
+- MCPB `fileSha256` is `1240349d160b39eb96d221d10de8310a99bfbcf39e276c87ef556740a016342d`.
 - Transport is `stdio`.
 - Release workflow `.github/workflows/release-mcp.yml` builds all native backends, verifies current-platform native execution, packages per-RID native assets, builds a deterministic MCPB, publishes npm packages when needed, uploads GitHub Release assets, then runs `mcp-publisher login github-oidc`, `mcp-publisher validate`, and `mcp-publisher publish`.
 - Project license metadata is `AGPL-3.0-or-later`.
 - MCP Registry/MCPB is the primary global distribution path for MCP host discovery.
-- npm is a secondary convenience channel. v0.8.3 release automation targets both `@flyfish-dev/word-ai@0.8.3` and unscoped `word-ai-mcp@0.8.3`; local npm publish was not attempted because this machine is not authenticated to npm.
+- npm is a secondary convenience channel. v0.8.3 release automation targets both `@flyfish-dev/word-ai@0.8.3` and unscoped `word-ai-mcp@0.8.3`; the npm packages intentionally stay lightweight and download only the current-platform GitHub Release native archive with SHA-256 verification on first run.
 - GitHub Release native assets generated locally:
   `word-ai-openxml-0.8.3-osx-arm64.tar.gz`,
   `word-ai-openxml-0.8.3-osx-x64.tar.gz`,

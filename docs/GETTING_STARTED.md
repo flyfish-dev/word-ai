@@ -155,7 +155,7 @@ Word AI does not require Python to implement the production DOCX writer. Python 
 3. Source project through `dotnet run --project`.
 4. Python OOXML fallback only when `WORD_AI_ENGINE=auto` and no .NET backend is available.
 
-Official release packages include `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. Word AI chooses the current platform automatically; set `WORD_AI_DOTNET_RID`, `WORD_AI_DOTNET_EXE`, or `WORD_AI_DOTNET_NATIVE_DIR` only for custom packaging.
+MCPB and GitHub Release assets include `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. Word AI chooses the current platform automatically. The npm launcher downloads only the current-platform native archive from the GitHub Release, verifies its SHA-256 checksum, and caches it under the user cache; set `WORD_AI_DOTNET_RID`, `WORD_AI_DOTNET_EXE`, or `WORD_AI_DOTNET_NATIVE_DIR` only for custom packaging.
 
 Set `WORD_AI_ENGINE=dotnet` in production to fail fast if the .NET backend is missing. Use `WORD_AI_ENGINE=python` only for fallback comparison or development.
 

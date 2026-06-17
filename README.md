@@ -133,7 +133,7 @@ Offline file transactions use the .NET Open XML backend by default when it is av
 3. Local source project via `dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj`.
 4. Python OOXML fallback only when .NET is unavailable and `WORD_AI_ENGINE=auto`.
 
-Release packages include self-contained native backends for `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. Word AI detects the current RID, including Linux glibc vs musl, and loads the matching binary automatically. Advanced deployments can override detection with `WORD_AI_DOTNET_RID`, `WORD_AI_DOTNET_EXE`, or `WORD_AI_DOTNET_NATIVE_DIR`.
+MCPB and GitHub Release assets include self-contained native backends for `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. Word AI detects the current RID, including Linux glibc vs musl, and loads the matching binary automatically. The npm launcher keeps the package small: on first run it downloads only the current-platform native archive from the GitHub Release, verifies the SHA-256 checksum, caches it under the user cache, and sets `WORD_AI_DOTNET_NATIVE_DIR`. Advanced deployments can override detection with `WORD_AI_DOTNET_RID`, `WORD_AI_DOTNET_EXE`, or `WORD_AI_DOTNET_NATIVE_DIR`; set `WORD_AI_SKIP_NATIVE_DOWNLOAD=1` to disable npm native downloads.
 
 Control it with `WORD_AI_ENGINE=auto|dotnet|python`, or pass `engine` to `docx_assess_patchset`, `docx_dry_run_patchset`, `docx_apply_patchset`, and `docx_validate`. Use `WORD_AI_ENGINE=dotnet` in production to fail fast instead of silently falling back.
 
@@ -218,7 +218,7 @@ word-ai --root "$PWD" doctor
 word-ai-mcp --root "$PWD" --allow-root "$HOME/Downloads"
 ```
 
-The first npm run creates a local Python virtual environment under the user cache and installs Word AI Python dependencies automatically. Set `WORD_AI_PYTHON=/path/to/python3.10+` if Python discovery needs help.
+The first npm run creates a local Python virtual environment under the user cache, installs Word AI Python dependencies automatically, and downloads the current-platform .NET native backend from the GitHub Release with checksum verification. Set `WORD_AI_PYTHON=/path/to/python3.10+` if Python discovery needs help.
 
 ## Use With Codex MCP
 

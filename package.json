@@ -49,8 +49,6 @@
     "scripts/package_native_assets.py",
     "scripts/publish_dotnet.sh",
     "scripts/publish_dotnet.ps1",
-    "native/",
-    "dist/native/",
     "pyproject.toml",
     "requirements.txt",
     "README.md",

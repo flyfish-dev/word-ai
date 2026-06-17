@@ -89,22 +89,13 @@ jobs:
               "scripts/verify_native_backends.py",
               "scripts/package_native_assets.py",
           }
-          for rid in [
-              "osx-arm64",
-              "osx-x64",
-              "linux-x64",
-              "linux-arm64",
-              "linux-musl-x64",
-              "linux-musl-arm64",
-              "win-x64",
-              "win-arm64",
-          ]:
-              name = "WordAi.OpenXml.exe" if rid.startswith("win-") else "WordAi.OpenXml"
-              required.add(f"dist/native/{rid}/{name}")
           missing = sorted(required - paths)
           if missing:
               raise SystemExit(f"npm package is missing required files: {missing}")
-          print("npm package payload includes docs and all native backends")
+          native_payload = sorted(path for path in paths if path.startswith("dist/native/") or path.startswith("native/"))
+          if native_payload:
+              raise SystemExit(f"npm package should not embed native backends; found: {native_payload[:5]}")
+          print("npm package payload includes docs and native downloader scripts, without oversized native binaries")
           PY
 
       - name: Align server.json with tag and MCPB
