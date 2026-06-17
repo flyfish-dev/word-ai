@@ -1,8 +1,11 @@
-# Contributing / 贡献指南
+# Contributing
+
+| Language | Preview |
+| --- | --- |
+| [English](CONTRIBUTING.md) | Development setup, required checks, and contribution rules for safe Word AI changes. |
+| [中文](CONTRIBUTING.zh-CN.md) | Word AI 开发环境、必跑检查和结构稳定贡献规则。 |
 
 Thank you for contributing to Word AI.
-
-谢谢你参与 Word AI。
 
 ## Development Setup
 
@@ -43,14 +46,3 @@ npm audit --omit=dev --registry=https://registry.npmjs.org --json
 - Add or update validation coverage for every write operation.
 - Keep generated files, local tokens, build artifacts, and Office lock files out of commits.
 - When updating installation docs, present MCP Registry/MCPB and Agent Skill installation as the primary path; keep npm as a secondary convenience channel for hosts that cannot consume MCP Registry packages yet.
-
-## 中文说明
-
-提交 PR 前请完成上述检查。涉及 DOCX 写入逻辑时，必须遵守结构稳定优先原则：
-
-- 不重建整篇 DOCX。
-- 不绕过 PatchSet。
-- 不把 OfficeCLI 写入命令作为默认流程；除非包进 Word AI 的 PatchSet、dry-run、audit、rollback 和审批。
-- 写入前必须 assess 和 dry-run。
-- 写入后必须 validate 和 diff。
-- 高风险操作必须带旧文本或旧 hash 前置条件。

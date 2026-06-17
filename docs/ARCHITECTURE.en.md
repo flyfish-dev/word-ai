@@ -1,5 +1,10 @@
 # Word AI Architecture
 
+| Language | Preview |
+| --- | --- |
+| [English](ARCHITECTURE.en.md) | Word AI system goals, components, PatchSet transactions, and Office.js session architecture. |
+| [中文](ARCHITECTURE.md) | Word AI 的系统目标、组件分工、PatchSet 事务和 Office.js 会话架构。 |
+
 Word AI is not a document generator. It is a document transaction system for AI-assisted editing of existing Word documents.
 
 ## Goals

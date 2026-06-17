@@ -1,5 +1,10 @@
 # 安全设计
 
+| 文档 | 预览 |
+| --- | --- |
+| [中文](SECURITY.md) | 路径安全、工具写入边界、Office bridge token、数据安全和生产增强建议。 |
+| [English](SECURITY.en.md) | Path safety, write boundaries, Office bridge token model, data safety, and production hardening notes. |
+
 ## 路径安全
 
 MCP Server 启动时通过 `--root` 指定主工作区根目录；相对路径都基于该目录解析。需要访问项目外的原始文档时，可以重复传入 `--allow-root <dir>`，或设置 `WORD_AI_ALLOWED_ROOTS`。所有路径解析后必须位于 `--root` 或某个 `--allow-root` 目录内；任何未授权的 `../` 越界或绝对路径逃逸都会被拒绝。

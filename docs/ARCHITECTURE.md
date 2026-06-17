@@ -1,5 +1,10 @@
 # Word AI 编辑系统架构
 
+| 文档 | 预览 |
+| --- | --- |
+| [中文](ARCHITECTURE.md) | Word AI 的系统目标、组件分工、PatchSet 事务和 Office.js 会话架构。 |
+| [English](ARCHITECTURE.en.md) | Word AI system goals, components, PatchSet transactions, and Office.js session architecture. |
+
 ## 1. 总体目标
 
 目标不是做一个“会写 Word 的聊天机器人”，而是做一个**以 Word 原结构为边界的文档事务系统**：

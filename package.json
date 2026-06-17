@@ -43,6 +43,12 @@
     "pyproject.toml",
     "requirements.txt",
     "README.md",
+    "README.zh-CN.md",
+    "docs/*.md",
+    "CONTRIBUTING.md",
+    "CONTRIBUTING.zh-CN.md",
+    "SECURITY.md",
+    "SECURITY.zh-CN.md",
     "LICENSE",
     "AGENTS.md",
     "server.json"

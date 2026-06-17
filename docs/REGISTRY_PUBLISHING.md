@@ -1,5 +1,10 @@
 # MCP Registry Publishing
 
+| Language | Preview |
+| --- | --- |
+| [English](REGISTRY_PUBLISHING.md) | Global MCP Registry, MCPB, npm fallback, release flow, and verification steps. |
+| [中文](REGISTRY_PUBLISHING.zh-CN.md) | 全球 MCP Registry、MCPB、npm 第二渠道、发布流程和验证步骤。 |
+
 Word AI is published for global discovery through the official MCP Registry using a public GitHub Release MCPB artifact. npm packages are secondary convenience channels and should not replace Registry/MCPB metadata for MCP host discovery.
 
 ## Server Identity
@@ -85,11 +90,3 @@ curl "https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-de
 ```
 
 If the registry publish step fails with a namespace permission error, verify that the GitHub identity used by the workflow can publish for the `flyfish-dev` organization namespace, or switch the registry authentication method to DNS verification for a custom domain.
-
-## 中文说明
-
-Word AI 已按官方 MCP Registry 的元数据格式发布全球索引能力。项目通过 GitHub Release 发布公开 MCPB 资产，通过 `server.json` 声明 MCP server 名称、仓库、版本、安装包和 stdio transport。
-
-正式发布时，只需要推送 `v*` tag。GitHub Actions 会完成 MCPB 构建、sha256 计算、GitHub Release 上传、GitHub OIDC 登录 MCP Registry 和 `mcp-publisher publish`。发布完成后，MCP Registry 及其下游聚合器即可按 `io.github.flyfish-dev/word-ai` 检索。
-
-npm 仅作为第二渠道，适合快速免 clone 启动或暂不支持 MCP Registry/MCPB 的客户端。面向用户的安装文档应优先推荐 MCP Registry/MCPB 和 Agent Skill，再提供 `@flyfish-dev/word-ai` 与 `word-ai-mcp` npm 包作为备用入口。
