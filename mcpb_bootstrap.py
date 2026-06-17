@@ -10,14 +10,24 @@ import venv
 from pathlib import Path
 
 
-VERSION = "0.8.1"
+DEFAULT_VERSION = "0.8.5"
+
+
+def bundle_version(bundle_dir: Path) -> str:
+    pyproject = bundle_dir / "pyproject.toml"
+    if pyproject.exists():
+        for line in pyproject.read_text(encoding="utf-8").splitlines():
+            if line.startswith("version = "):
+                return line.split("=", 1)[1].strip().strip('"')
+    return DEFAULT_VERSION
 
 
 def ensure_venv(bundle_dir: Path) -> Path:
+    version = bundle_version(bundle_dir)
     venv_dir = bundle_dir / ".word-ai-mcpb-venv"
     python = venv_dir / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
     marker = venv_dir / ".word-ai-version"
-    if python.exists() and marker.exists() and marker.read_text().strip() == VERSION:
+    if python.exists() and marker.exists() and marker.read_text().strip() == version:
         return python
 
     venv.EnvBuilder(with_pip=True, clear=True).create(venv_dir)
@@ -31,7 +41,7 @@ def ensure_venv(bundle_dir: Path) -> Path:
         stdout=sys.stderr,
         stderr=sys.stderr,
     )
-    marker.write_text(VERSION + "\n")
+    marker.write_text(version + "\n")
     return python
 
 

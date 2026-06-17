@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .patchset import normalize_patchset
+from .resources import runtime_root
 
 
 JSON = dict[str, Any]
@@ -32,7 +33,7 @@ class EngineUnavailable(RuntimeError):
 
 
 def package_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    return runtime_root()
 
 
 def normalize_engine(value: str | None = None) -> str:

@@ -30,6 +30,7 @@ AI systems are good at generating text, but Word documents are structured packag
 - **Structure validation** for package parts, content controls, tables, paragraphs, fields, comments, images, revisions, and protected body blocks.
 - **Python MCP facade and bridge runtime** for local agent integration, path policy, session queues, and distribution compatibility.
 - **.NET 8 Open XML SDK engine** as the authoritative offline DOCX transaction backend, using a packaged native binary or Release DLL when available.
+- **Single-file standalone binaries and quickstart bundles** for no-clone, no-venv, no-.NET-SDK offline DOCX editing and one-command Agent Skill installation.
 - **Office.js taskpane** for Word-side anchors, PatchSet preview, dry-run, apply, and open-document content-control editing with hash checks.
 - **Live Word session tools** (`word_session_*`) so Codex can read, preview, apply, and roll back edits in the currently open Word document through Office.js.
 - **Local HTTP bridge** secured by a local token and localhost-only CORS for Office add-in workflows.
@@ -58,16 +59,30 @@ The Office.js taskpane is the Word session layer. It creates and lists content c
 Use the most native distribution path your agent host supports:
 
 1. **MCP Registry / MCPB first**: install the MCP server from the official MCP Registry using server name `io.github.flyfish-dev/word-ai`.
-2. **Agent Skill next**: install the `word-ai` Skill so Codex, Claude Code, and compatible agents know when to choose offline `docx_*` versus live `word_session_*`.
-3. **Local source install for full Word sessions**: use this when you need the Office.js taskpane, localhost bridge, .NET Open XML regression path, or development workflow.
-4. **npm as a secondary channel**: use npm only when your MCP host cannot consume MCP Registry/MCPB yet, or when you want a no-clone stdio server command.
+2. **Standalone quickstart for the lowest local setup cost**: download the current-platform GitHub Release bundle when you want one executable that can run MCP, install the Skill, and generate Codex config without a source checkout.
+3. **Agent Skill next**: install the `word-ai` Skill so Codex, Claude Code, and compatible agents know when to choose offline `docx_*` versus live `word_session_*`.
+4. **Local source install for full Word sessions**: use this when you need the Office.js taskpane, localhost bridge, .NET Open XML regression path, or development workflow.
+5. **npm as a secondary channel**: use npm only when your MCP host cannot consume MCP Registry/MCPB yet, or when you want a no-clone stdio server command.
 
 MCP Registry details:
 
 - Server name: `io.github.flyfish-dev/word-ai`
 - Registry metadata: [server.json](server.json)
-- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.4/word-ai-0.8.4.mcpb`
+- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.5/word-ai-0.8.5.mcpb`
 - Registry latest API: `https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
+
+Fast local setup with the standalone quickstart bundle:
+
+```bash
+tar -xzf word-ai-quickstart-0.8.5-osx-arm64.tar.gz
+cd word-ai-quickstart-0.8.5-osx-arm64
+
+./word-ai install-skill
+./word-ai codex-config --output .wordai/codex-config.toml
+./word-ai mcp --root "$PWD" --allow-root "$HOME/Downloads" --allow-root "$HOME/Documents"
+```
+
+Choose the artifact matching your platform: `linux-x64`, `linux-arm64`, `osx-arm64`, `osx-x64`, `win-x64`, or `win-arm64`. See [Distribution](docs/DISTRIBUTION.md) for the complete release asset policy.
 
 Install the Skill and full local runtime:
 
@@ -134,7 +149,7 @@ Offline file transactions use the .NET Open XML backend by default when it is av
 3. Local source project via `dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj`.
 4. Python OOXML fallback only when .NET is unavailable and `WORD_AI_ENGINE=auto`.
 
-MCPB and GitHub Release assets include self-contained native backends for `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. Word AI detects the current RID, including Linux glibc vs musl, and loads the matching binary automatically. The npm launcher keeps the package small: on first run it downloads only the current-platform native archive from the GitHub Release, verifies the SHA-256 checksum, caches it under the user cache, and sets `WORD_AI_DOTNET_NATIVE_DIR`. Advanced deployments can override detection with `WORD_AI_DOTNET_RID`, `WORD_AI_DOTNET_EXE`, or `WORD_AI_DOTNET_NATIVE_DIR`; set `WORD_AI_SKIP_NATIVE_DOWNLOAD=1` to disable npm native downloads.
+MCPB and GitHub Release assets include self-contained native backends for `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. Standalone quickstart bundles are built for standard hosted platforms: `linux-x64`, `linux-arm64`, `osx-arm64`, `osx-x64`, `win-x64`, and `win-arm64`. Word AI detects the current RID, including Linux glibc vs musl for native backend loading, and loads the matching binary automatically. The npm launcher keeps the package small: on first run it downloads only the current-platform native archive from the GitHub Release, verifies the SHA-256 checksum, caches it under the user cache, and sets `WORD_AI_DOTNET_NATIVE_DIR`. Advanced deployments can override detection with `WORD_AI_DOTNET_RID`, `WORD_AI_DOTNET_EXE`, or `WORD_AI_DOTNET_NATIVE_DIR`; set `WORD_AI_SKIP_NATIVE_DOWNLOAD=1` to disable npm native downloads.
 
 Control it with `WORD_AI_ENGINE=auto|dotnet|python`, or pass `engine` to `docx_assess_patchset`, `docx_dry_run_patchset`, `docx_apply_patchset`, and `docx_validate`. Use `WORD_AI_ENGINE=dotnet` in production to fail fast instead of silently falling back.
 
@@ -176,9 +191,10 @@ After installation, start a new agent session or restart the client if the skill
 Word AI is published for discovery through the official MCP Registry and MCPB distribution. Prefer this channel for MCP host installation because it carries standardized server metadata, versioning, transport details, and provenance:
 
 - MCP server name: `io.github.flyfish-dev/word-ai`
-- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.4/word-ai-0.8.4.mcpb`
+- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.5/word-ai-0.8.5.mcpb`
 - Registry metadata: [server.json](server.json)
 - Publishing guide: [MCP Registry Publishing](docs/REGISTRY_PUBLISHING.md)
+- Standalone and quickstart guide: [Distribution](docs/DISTRIBUTION.md)
 
 Local container smoke test:
 
@@ -190,7 +206,7 @@ docker run --rm -i \
   word-ai:local
 ```
 
-The MCP Registry release uses a public MCPB artifact for one-click-friendly local server installation. The MCPB package requires Python 3.10+ and bootstraps a local virtual environment on first run. The Dockerfile remains available for local or self-hosted builds. For full Office.js live-session editing, use the local install path because the Word taskpane and localhost bridge must run on the user's machine.
+The MCP Registry release uses a public MCPB artifact for one-click-friendly local server installation. The standalone quickstart bundle is the lowest-friction local command path because it embeds the Python facade, dependencies, current-platform .NET Open XML backend, schemas, and Skill template in one executable. The MCPB package requires Python 3.10+ and bootstraps a local virtual environment on first run. The Dockerfile remains available for local or self-hosted builds. For full Office.js live-session editing, use the local source install path because the Word taskpane and localhost bridge must run on the user's machine.
 
 ## Secondary npm Channel
 
@@ -364,6 +380,7 @@ docx_health_check
 
 - [Documentation Index](docs/README.md)
 - [Getting Started](docs/GETTING_STARTED.md)
+- [Distribution](docs/DISTRIBUTION.md)
 - [Word AI Codex Skill](skills/word-ai/SKILL.md)
 - [Architecture](docs/ARCHITECTURE.en.md)
 - [Tool Contract](docs/TOOL_CONTRACT.md)
@@ -371,6 +388,7 @@ docx_health_check
 - [QA Report](docs/QA_REPORT.md)
 - [Validation Matrix](docs/VALIDATION_MATRIX.md)
 - [MCP Registry Publishing](docs/REGISTRY_PUBLISHING.md)
+- [v0.8.5 Changelog](docs/CHANGELOG_V085.md)
 - [v0.8.4 Changelog](docs/CHANGELOG_V084.md)
 - [v0.8.3 Changelog](docs/CHANGELOG_V083.md)
 - [v0.8.1 Changelog](docs/CHANGELOG_V081.md)

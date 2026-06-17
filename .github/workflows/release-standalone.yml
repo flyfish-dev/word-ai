@@ -1,0 +1,103 @@
+name: Release Standalone Binaries
+
+on:
+  push:
+    tags: ["v*"]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  standalone:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+            ext: ""
+          - os: ubuntu-24.04-arm
+            rid: linux-arm64
+            ext: ""
+          - os: macos-14
+            rid: osx-arm64
+            ext: ""
+          - os: macos-15-intel
+            rid: osx-x64
+            ext: ""
+          - os: windows-2022
+            rid: win-x64
+            ext: ".exe"
+          - os: windows-11-arm
+            rid: win-arm64
+            ext: ".exe"
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-standalone.txt
+
+      - name: Build standalone executable
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          RID="${{ matrix.rid }}"
+          PYTHONPATH=. python scripts/publish_native_backends.py "$RID" --clean --json
+          PYTHONPATH=. python scripts/build_standalone.py --version "$VERSION" --rid "$RID" --json
+          PYTHONPATH=. python scripts/package_quickstart.py --version "$VERSION" --rid "$RID" --json
+          mkdir -p dist/standalone-assets
+          cp "dist/standalone/$RID/word-ai${{ matrix.ext }}" "dist/standalone-assets/word-ai-standalone-${VERSION}-${RID}${{ matrix.ext }}"
+          if command -v shasum >/dev/null 2>&1; then
+            shasum -a 256 "dist/standalone-assets/word-ai-standalone-${VERSION}-${RID}${{ matrix.ext }}" "dist/quickstart/word-ai-quickstart-${VERSION}-${RID}."* > "dist/standalone-assets/word-ai-standalone-${VERSION}-${RID}-checksums.sha256"
+          else
+            sha256sum "dist/standalone-assets/word-ai-standalone-${VERSION}-${RID}${{ matrix.ext }}" "dist/quickstart/word-ai-quickstart-${VERSION}-${RID}."* > "dist/standalone-assets/word-ai-standalone-${VERSION}-${RID}-checksums.sha256"
+          fi
+
+      - name: Smoke standalone executable
+        shell: bash
+        run: |
+          RID="${{ matrix.rid }}"
+          EXE="dist/standalone/$RID/word-ai${{ matrix.ext }}"
+          SMOKE_OUT="${RUNNER_TEMP:-/tmp}/word-ai-standalone-smoke.jsonl"
+          "$EXE" --version
+          "$EXE" install-skill --dry-run
+          printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"standalone-smoke","version":"0"}}}\n{"jsonrpc":"2.0","method":"notifications/initialized","params":{}}\n{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}\n' | "$EXE" mcp --root "$PWD" > "$SMOKE_OUT"
+          export SMOKE_OUT
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          lines = [json.loads(line) for line in Path(os.environ["SMOKE_OUT"]).read_text().splitlines() if line.strip()]
+          assert lines[0]["result"]["serverInfo"]["name"] == "word-ai-mcp"
+          tools = lines[1]["result"]["tools"]
+          assert len(tools) == 63
+          print("standalone smoke passed")
+          PY
+
+      - name: Upload standalone release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          for i in $(seq 1 60); do
+            if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+              break
+            fi
+            sleep 5
+          done
+          gh release upload "$GITHUB_REF_NAME" dist/standalone-assets/* dist/quickstart/* --clobber

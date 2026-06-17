@@ -1,4 +1,4 @@
-# QA Report — v0.8.4 Local Verification
+# QA Report — v0.8.5 Local Verification
 
 Verification date: 2026-06-17.
 
@@ -29,14 +29,20 @@ PYTHONPATH=. python scripts/validate_word_ai_skill.py
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
 PYTHONPATH=. python scripts/publish_native_backends.py --all --clean --json
 PYTHONPATH=. python scripts/verify_native_backends.py --require-all
-PYTHONPATH=. python scripts/package_native_assets.py --version 0.8.4
-PYTHONPATH=. python scripts/build_mcpb.py --version 0.8.4 --out dist/word-ai-0.8.4.mcpb
+PYTHONPATH=. python scripts/package_native_assets.py --version 0.8.5
+PYTHONPATH=. python scripts/build_mcpb.py --version 0.8.5 --out dist/word-ai-0.8.5.mcpb
+PYTHONPATH=. python scripts/build_standalone.py --rid osx-arm64 --json
+PYTHONPATH=. python scripts/package_quickstart.py --version 0.8.5 --rid osx-arm64 --json
+dist/standalone/osx-arm64/word-ai --version
+dist/standalone/osx-arm64/word-ai install-skill --dry-run
+dist/standalone/osx-arm64/word-ai codex-config --output /tmp/word-ai-binary-codex.toml
+dist/standalone/osx-arm64/word-ai mcp --root "$PWD"  # stdio initialize + tools/list smoke
 npm pack --dry-run --json
 bash scripts/install.sh
 WORD_AI_BRIDGE_PORT=8876 WORD_AI_TASKPANE_PORT=3100 bash scripts/start.sh --http
 mcp-publisher validate
-docker build -t word-ai:0.8.4-local .
-docker run --rm -i -v "$PWD:/workspace" word-ai:0.8.4-local
+docker build -t word-ai:0.8.5-local .
+docker run --rm -i -v "$PWD:/workspace" word-ai:0.8.5-local
 npx -y @anthropic-ai/mcpb validate <extracted-manifest.json>
 ```
 
@@ -66,38 +72,41 @@ Results:
 - Live Word session queue endpoints verified through smoke: session register, queued command claim, command completion, command status, apply command enqueue, rollback command enqueue.
 - Optional OfficeCLI wrappers are present as allowlisted tools: `officecli_view_html`, `officecli_view_screenshot`, `officecli_view_issues`, `officecli_query`, `officecli_validate`.
 - Official MCP Registry metadata validation: passed for `server.json`.
-- Local OCI image build: passed for `word-ai:0.8.4-local`.
+- Local OCI image build: passed for `word-ai:0.8.5-local`.
 - OCI image labels: `io.modelcontextprotocol.server.name=io.github.flyfish-dev/word-ai`, `org.opencontainers.image.licenses=AGPL-3.0-or-later`.
-- Container stdio MCP handshake: passed with `serverInfo.version=0.8.4`.
+- Container stdio MCP handshake: passed with `serverInfo.version=0.8.5`.
 - Container `tools/list`: passed with 63 tools.
-- Deterministic MCPB build: passed for `dist/word-ai-0.8.4.mcpb`.
+- Deterministic MCPB build: passed for `dist/word-ai-0.8.5.mcpb`.
 - MCPB native payload check: passed; all 8 native backends are included and Unix executable modes are preserved as `0755`.
 - MCPB manifest validation with `@anthropic-ai/mcpb`: passed.
 - npm package dry-run: passed; payload includes split English/Chinese docs, the native downloader launcher, and native publishing/verification scripts, while excluding oversized `native/` and `dist/native/` payloads.
 - npm launcher bootstrap smoke: passed; bootstrap output is routed to stderr, the Python venv is created under the user cache, and the current-platform native backend is selected through `WORD_AI_DOTNET_NATIVE_DIR`.
-- MCPB bootstrap first-run stdio test: passed with `serverInfo.version=0.8.4` and 63 tools. Dependency installation logs are routed to stderr so stdout remains valid MCP JSON.
+- MCPB bootstrap first-run stdio test: passed with `serverInfo.version=0.8.5` and 63 tools. Dependency installation logs are routed to stderr so stdout remains valid MCP JSON.
+- Standalone one-file binary smoke: passed for local `osx-arm64`; `--version`, `install-skill --dry-run`, `doctor`, `codex-config`, MCP initialize, and `tools/list` all completed successfully with 63 tools.
+- Quickstart bundle smoke: passed for local `osx-arm64`; the archive extracted to a versioned folder and the bundled executable passed `--version`, `install-skill --dry-run`, `codex-config`, MCP initialize, and `tools/list`.
 
 ## Global Distribution Checks
 
 - `server.json` uses official schema `https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json`.
 - MCP server name is `io.github.flyfish-dev/word-ai`.
-- Package type is MCPB with identifier `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.4/word-ai-0.8.4.mcpb`.
+- Package type is MCPB with identifier `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.5/word-ai-0.8.5.mcpb`.
 - Published GitHub Release and MCP Registry MCPB `fileSha256` is computed from the final MCPB artifact during release and recorded in `server.json` plus the MCP Registry version metadata.
 - Transport is `stdio`.
 - Release workflow `.github/workflows/release-mcp.yml` builds all native backends, verifies current-platform native execution, packages per-RID native assets, builds a deterministic MCPB, publishes npm packages when needed, uploads GitHub Release assets, then runs `mcp-publisher login github-oidc`, `mcp-publisher validate`, and `mcp-publisher publish`.
 - Project license metadata is `AGPL-3.0-or-later`.
 - MCP Registry/MCPB is the primary global distribution path for MCP host discovery.
-- npm is a secondary convenience channel. v0.8.4 release automation targets both `@flyfish-dev/word-ai@0.8.4` and unscoped `word-ai-mcp@0.8.4`; the npm packages intentionally stay lightweight and download only the current-platform GitHub Release native archive with SHA-256 verification on first run.
+- npm is a secondary convenience channel. v0.8.5 release automation targets both `@flyfish-dev/word-ai@0.8.5` and unscoped `word-ai-mcp@0.8.5`; the npm packages intentionally stay lightweight and download only the current-platform GitHub Release native archive with SHA-256 verification on first run.
 - GitHub Release native assets generated locally:
-  `word-ai-openxml-0.8.4-osx-arm64.tar.gz`,
-  `word-ai-openxml-0.8.4-osx-x64.tar.gz`,
-  `word-ai-openxml-0.8.4-linux-x64.tar.gz`,
-  `word-ai-openxml-0.8.4-linux-arm64.tar.gz`,
-  `word-ai-openxml-0.8.4-linux-musl-x64.tar.gz`,
-  `word-ai-openxml-0.8.4-linux-musl-arm64.tar.gz`,
-  `word-ai-openxml-0.8.4-win-x64.zip`,
-  `word-ai-openxml-0.8.4-win-arm64.zip`,
-  and `word-ai-openxml-0.8.4-checksums.sha256`.
+  `word-ai-openxml-0.8.5-osx-arm64.tar.gz`,
+  `word-ai-openxml-0.8.5-osx-x64.tar.gz`,
+  `word-ai-openxml-0.8.5-linux-x64.tar.gz`,
+  `word-ai-openxml-0.8.5-linux-arm64.tar.gz`,
+  `word-ai-openxml-0.8.5-linux-musl-x64.tar.gz`,
+  `word-ai-openxml-0.8.5-linux-musl-arm64.tar.gz`,
+  `word-ai-openxml-0.8.5-win-x64.zip`,
+  `word-ai-openxml-0.8.5-win-arm64.zip`,
+  and `word-ai-openxml-0.8.5-checksums.sha256`.
+- GitHub Release standalone assets are produced by `.github/workflows/release-standalone.yml` for `linux-x64`, `linux-arm64`, `osx-arm64`, `osx-x64`, `win-x64`, and `win-arm64`, with matching quickstart archives and checksums.
 
 ## Structural Validation Evidence
 

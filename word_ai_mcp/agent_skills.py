@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+from .resources import resource_path
+
 
 SKILL_NAME = "word-ai"
 
@@ -49,6 +51,19 @@ def repo_root(value: str | None = None) -> Path:
     if value:
         return Path(value).expanduser().resolve()
     return Path(__file__).resolve().parent.parent
+
+
+def source_skill_dir(root: Path) -> Path:
+    candidates = [
+        root / "skills" / SKILL_NAME,
+        resource_path("skills", SKILL_NAME),
+        resource_path("codex-skill"),
+    ]
+    for candidate in candidates:
+        if (candidate / "SKILL.md").exists():
+            return candidate
+    searched = ", ".join(str(path) for path in candidates)
+    raise FileNotFoundError(f"missing bundled {SKILL_NAME} skill. Searched: {searched}")
 
 
 def _env_home(name: str, fallback: Path) -> Path:
@@ -179,7 +194,7 @@ def copy_skill(source: Path, target: Path, dry_run: bool = False) -> str:
 
 
 def install_agent_skills(root: Path, selector: str = "auto", include_project: bool = False, dry_run: bool = False) -> list[InstallResult]:
-    source = root / "skills" / SKILL_NAME
+    source = source_skill_dir(root)
     validate_source_skill(source)
     results: list[InstallResult] = []
     for target in selected_targets(root, selector, include_project=include_project):

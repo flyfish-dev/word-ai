@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from . import __version__
 from .server import WordAiMcpServer
 from .session_store import claim_pending_commands, complete_command, list_sessions, register_session, update_session
 
@@ -92,7 +93,7 @@ def make_handler(root: str, allow_write: bool, token: str, allowed_roots: list[s
     }
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = "WordAiMcpHTTP/0.8.4"
+        server_version = f"WordAiMcpHTTP/{__version__}"
 
         def log_message(self, fmt: str, *args: Any) -> None:
             print("%s - - [%s] %s" % (self.client_address[0], self.log_date_time_string(), fmt % args))

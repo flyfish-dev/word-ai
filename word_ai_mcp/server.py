@@ -10,6 +10,7 @@ import traceback
 from pathlib import Path
 from typing import Any, Callable
 
+from . import __version__
 from .ooxml import (
     apply_patchset,
     assess_patchset,
@@ -734,7 +735,7 @@ class WordAiMcpServer:
         req_id = request.get("id")
         try:
             if method == "initialize":
-                result = {"protocolVersion": request.get("params", {}).get("protocolVersion", "2025-11-25"), "serverInfo": {"name": "word-ai-mcp", "version": "0.8.4"}, "capabilities": {"tools": {"listChanged": False}, "resources": {}, "prompts": {}}}
+                result = {"protocolVersion": request.get("params", {}).get("protocolVersion", "2025-11-25"), "serverInfo": {"name": "word-ai-mcp", "version": __version__}, "capabilities": {"tools": {"listChanged": False}, "resources": {}, "prompts": {}}}
                 return {"jsonrpc": "2.0", "id": req_id, "result": result}
             if method == "notifications/initialized":
                 return None

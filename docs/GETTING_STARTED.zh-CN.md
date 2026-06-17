@@ -16,16 +16,30 @@
 推荐安装顺序：
 
 1. **MCP Registry / MCPB**：客户端支持时，优先从 MCP host 或 marketplace 安装 `io.github.flyfish-dev/word-ai`。
-2. **Agent Skill**：安装 `word-ai` Skill，让 Codex、Claude Code 和兼容 Agent 遵循安全 Word 编辑流程。
-3. **本地源码安装**：需要完整 Office.js live Word session、localhost bridge、.NET Open XML 回归或开发调试时使用。
-4. **npm 第二渠道**：仅作为暂不支持 MCP Registry/MCPB 的客户端、CI smoke test 或免 clone stdio 启动的备用方式。
+2. **Standalone quickstart**：需要一个无需源码 checkout、Python venv、pip install 或 .NET SDK 的本地 executable 时使用 GitHub Release quickstart 包。
+3. **Agent Skill**：安装 `word-ai` Skill，让 Codex、Claude Code 和兼容 Agent 遵循安全 Word 编辑流程。
+4. **本地源码安装**：需要完整 Office.js live Word session、localhost bridge、.NET Open XML 回归或开发调试时使用。
+5. **npm 第二渠道**：仅作为暂不支持 MCP Registry/MCPB 的客户端、CI smoke test 或免 clone stdio 启动的备用方式。
 
 MCP Registry 信息：
 
 - MCP server 名称：`io.github.flyfish-dev/word-ai`
 - Registry 元数据：[server.json](../server.json)
-- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.4/word-ai-0.8.4.mcpb`
+- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.5/word-ai-0.8.5.mcpb`
 - Registry latest API：`https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
+
+无本地依赖 quickstart：
+
+```bash
+tar -xzf word-ai-quickstart-0.8.5-osx-arm64.tar.gz
+cd word-ai-quickstart-0.8.5-osx-arm64
+
+./word-ai install-skill
+./word-ai codex-config --output .wordai/codex-config.toml
+./word-ai doctor
+```
+
+按平台选择 `linux-x64`、`linux-arm64`、`osx-arm64`、`osx-x64`、`win-x64` 或 `win-arm64`。Release 资产说明见 [分发说明](DISTRIBUTION.zh-CN.md)。
 
 推荐一键安装：
 
@@ -149,7 +163,7 @@ Word AI 并不是要求 Python 实现生产级 DOCX writer。Python 是 MCP faca
 3. 通过 `dotnet run --project` 使用源码工程。
 4. 只有在 `WORD_AI_ENGINE=auto` 且 .NET 后端不可用时，才回退 Python OOXML。
 
-MCPB 与 GitHub Release 资产包含 `osx-arm64`、`osx-x64`、`linux-x64`、`linux-arm64`、`linux-musl-x64`、`linux-musl-arm64`、`win-x64` 和 `win-arm64`。Word AI 会自动选择当前平台。npm 启动器只会从 GitHub Release 下载当前平台 native 压缩包，校验 SHA-256 后缓存到用户缓存目录；只有自定义打包时才需要设置 `WORD_AI_DOTNET_RID`、`WORD_AI_DOTNET_EXE` 或 `WORD_AI_DOTNET_NATIVE_DIR`。
+MCPB 与 GitHub Release native 后端资产包含 `osx-arm64`、`osx-x64`、`linux-x64`、`linux-arm64`、`linux-musl-x64`、`linux-musl-arm64`、`win-x64` 和 `win-arm64`。Standalone quickstart 包覆盖标准 hosted 平台：`linux-x64`、`linux-arm64`、`osx-arm64`、`osx-x64`、`win-x64` 和 `win-arm64`。Word AI 会自动选择当前平台。npm 启动器只会从 GitHub Release 下载当前平台 native 压缩包，校验 SHA-256 后缓存到用户缓存目录；只有自定义打包时才需要设置 `WORD_AI_DOTNET_RID`、`WORD_AI_DOTNET_EXE` 或 `WORD_AI_DOTNET_NATIVE_DIR`。
 
 生产环境建议设置 `WORD_AI_ENGINE=dotnet`，让 .NET 后端缺失时直接失败。`WORD_AI_ENGINE=python` 只建议用于 fallback 对照或开发调试。
 

@@ -10,6 +10,7 @@ This directory contains the design, tool contract, safety policy, and validation
 ## English
 
 - [Getting Started](GETTING_STARTED.md): install, build, run, and configure Codex with MCP Registry/Skill first and npm as a secondary channel.
+- [Distribution](DISTRIBUTION.md): MCP Registry, standalone binaries, quickstart bundles, Agent Skill install, and npm fallback.
 - [Word AI Codex Skill](../skills/word-ai/SKILL.md): official Codex Skill rules for offline `docx_*`, live `word_session_*`, and optional read-only OfficeCLI evidence.
 - [Architecture](ARCHITECTURE.en.md): system architecture and component responsibilities.
 - [Tool Contract](TOOL_CONTRACT.md): MCP tool lifecycle and PatchSet rules.
@@ -20,6 +21,7 @@ This directory contains the design, tool contract, safety policy, and validation
 - [Stability Policy](STABILITY_POLICY.md): editing risk classes and safety boundaries.
 - [Development Plan](DEVELOPMENT_PLAN.md): roadmap for production hardening.
 - [Code Tool Catalog](CODEX_TOOL_CATALOG.md): generated MCP tool catalog.
+- [v0.8.5 Changelog](CHANGELOG_V085.md): standalone quickstart bundles and broader release smoke tests.
 - [v0.8.4 Changelog](CHANGELOG_V084.md): agent-friendly PatchSet alias normalization.
 - [v0.8.3 Changelog](CHANGELOG_V083.md): cross-platform native distribution and full release artifacts.
 - [v0.8.1 Changelog](CHANGELOG_V081.md): MCPB Registry release path.
@@ -31,6 +33,7 @@ This directory contains the design, tool contract, safety policy, and validation
 ## Recommended Reading Order
 
 1. Start with [Getting Started](GETTING_STARTED.md).
-2. Read [Tool Contract](TOOL_CONTRACT.md) before building an agent workflow.
-3. Read [Security Design](SECURITY.en.md) before enabling write tools.
-4. Read [Architecture](ARCHITECTURE.en.md) before changing internals.
+2. Use [Distribution](DISTRIBUTION.md) when choosing an install or release channel.
+3. Read [Tool Contract](TOOL_CONTRACT.md) before building an agent workflow.
+4. Read [Security Design](SECURITY.en.md) before enabling write tools.
+5. Read [Architecture](ARCHITECTURE.en.md) before changing internals.

@@ -86,9 +86,14 @@ jobs:
               "README.zh-CN.md",
               "docs/GETTING_STARTED.md",
               "docs/GETTING_STARTED.zh-CN.md",
+              "docs/DISTRIBUTION.md",
+              "docs/DISTRIBUTION.zh-CN.md",
+              "requirements-standalone.txt",
               "scripts/publish_native_backends.py",
               "scripts/verify_native_backends.py",
               "scripts/package_native_assets.py",
+              "scripts/build_standalone.py",
+              "scripts/package_quickstart.py",
           }
           missing = sorted(required - paths)
           if missing:

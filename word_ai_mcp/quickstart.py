@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .openxml_engine import dotnet_status
+from .resources import executable_path, is_frozen
 
 
 WRITE_APPROVAL_TOOLS = [
@@ -33,6 +34,8 @@ WRITE_APPROVAL_TOOLS = [
 def repo_root(value: str | None = None) -> Path:
     if value:
         return Path(value).expanduser().resolve()
+    if is_frozen():
+        return Path.cwd().resolve()
     return Path(__file__).resolve().parent.parent
 
 
@@ -79,7 +82,24 @@ def find_officecli() -> Path | None:
     return None
 
 
-def build_codex_config(root: Path, server_name: str = "word_ai", allowed_roots: list[str] | None = None, include_common_user_roots: bool = True) -> str:
+def standalone_command(default: str | None = None) -> str | None:
+    if default:
+        return str(Path(default).expanduser().resolve())
+    configured = os.environ.get("WORD_AI_STANDALONE_COMMAND") or os.environ.get("WORD_AI_BINARY")
+    if configured:
+        return str(Path(configured).expanduser().resolve())
+    if is_frozen():
+        return str(executable_path())
+    return None
+
+
+def build_codex_config(
+    root: Path,
+    server_name: str = "word_ai",
+    allowed_roots: list[str] | None = None,
+    include_common_user_roots: bool = True,
+    standalone_server_command: str | None = None,
+) -> str:
     python_path = preferred_python(root)
     extra_roots = [Path(p).expanduser().resolve() for p in (allowed_roots or [])]
     if include_common_user_roots:
@@ -88,19 +108,26 @@ def build_codex_config(root: Path, server_name: str = "word_ai", allowed_roots: 
     for path in extra_roots:
         if path != root and path not in resolved_extra_roots:
             resolved_extra_roots.append(path)
-    server_args = ["-m", "word_ai_mcp.server", "--root", str(root)]
+    binary = standalone_command(standalone_server_command)
+    if binary:
+        command = binary
+        server_args = ["mcp", "--root", str(root)]
+    else:
+        command = str(python_path)
+        server_args = ["-m", "word_ai_mcp.server", "--root", str(root)]
     for allowed in resolved_extra_roots:
         server_args.extend(["--allow-root", str(allowed)])
     lines = [
         f"[mcp_servers.{server_name}]",
-        f"command = {toml_string(str(python_path))}",
+        f"command = {toml_string(command)}",
         f"args = {json.dumps(server_args)}",
         "enabled = true",
         "startup_timeout_sec = 30",
         "",
         f"[mcp_servers.{server_name}.env]",
-        f"PYTHONPATH = {toml_string(str(root))}",
     ]
+    if not binary:
+        lines.append(f"PYTHONPATH = {toml_string(str(root))}")
     officecli = find_officecli()
     if officecli:
         lines.append(f"WORD_AI_OFFICECLI = {toml_string(str(officecli))}")
@@ -175,7 +202,10 @@ def doctor(root: Path) -> int:
 
     print()
     print(f"Repo root: {root}")
-    print(f"Python for Codex: {preferred_python(root)}")
+    if is_frozen():
+        print(f"Standalone binary: {executable_path()}")
+    else:
+        print(f"Python for Codex: {preferred_python(root)}")
     print("Default allowed roots:")
     for allowed in default_allowed_roots(root):
         print(f"  - {allowed}")
@@ -183,8 +213,21 @@ def doctor(root: Path) -> int:
     return 0 if ok else 1
 
 
-def write_codex_config(root: Path, server_name: str, output: str | None, allowed_roots: list[str] | None, include_common_user_roots: bool) -> int:
-    text = build_codex_config(root, server_name, allowed_roots=allowed_roots, include_common_user_roots=include_common_user_roots)
+def write_codex_config(
+    root: Path,
+    server_name: str,
+    output: str | None,
+    allowed_roots: list[str] | None,
+    include_common_user_roots: bool,
+    standalone_server_command: str | None,
+) -> int:
+    text = build_codex_config(
+        root,
+        server_name,
+        allowed_roots=allowed_roots,
+        include_common_user_roots=include_common_user_roots,
+        standalone_server_command=standalone_server_command,
+    )
     if output:
         out = Path(output).expanduser()
         if not out.is_absolute():
@@ -221,6 +264,7 @@ def main(argv: list[str] | None = None) -> int:
     config_parser.add_argument("--output", default=None)
     config_parser.add_argument("--allow-root", action="append", default=[], help="Additional allowed directory. Repeatable.")
     config_parser.add_argument("--no-common-user-roots", action="store_true", help="Do not include ~/Downloads, ~/Documents, and ~/Desktop automatically.")
+    config_parser.add_argument("--standalone-command", default=None, help="Use a Word AI standalone executable instead of python -m word_ai_mcp.server.")
     config_parser.set_defaults(
         func=lambda args: write_codex_config(
             repo_root(args.root),
@@ -228,6 +272,7 @@ def main(argv: list[str] | None = None) -> int:
             args.output,
             args.allow_root,
             not args.no_common_user_roots,
+            args.standalone_command,
         )
     )
 
