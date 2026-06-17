@@ -136,7 +136,7 @@ enabled = true
 startup_timeout_sec = 60
 ```
 
-You can replace `@flyfish-dev/word-ai` with `word-ai-mcp` in this npm-based config. The first npm run creates a Python virtual environment under the user cache and installs the Word AI Python dependencies automatically. Set `WORD_AI_PYTHON=/path/to/python3.10+` if Python discovery needs help.
+You can replace `@flyfish-dev/word-ai` with `word-ai-mcp` in this npm-based config. The first npm run downloads the current-platform quickstart bundle from GitHub Releases, caches it under the user cache, and executes the bundled standalone `word-ai`; no Python venv or pip install is needed on the default npm path.
 
 ## Run Local Checks
 

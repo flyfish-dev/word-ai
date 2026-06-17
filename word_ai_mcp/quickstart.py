@@ -276,24 +276,28 @@ def main(argv: list[str] | None = None) -> int:
         )
     )
 
-    skills_parser = sub.add_parser("install-skills", help="Install Word AI agent skills for Codex, Claude Code, and compatible clients.")
-    skills_parser.add_argument(
-        "--agents",
-        default="auto",
-        help="Comma-separated targets: auto, all, codex, codex-legacy, claude, cursor, windsurf, copilot, openclaw.",
-    )
-    skills_parser.add_argument("--project", action="store_true", help="Also install repository-scoped .agents and .claude skills.")
-    skills_parser.add_argument("--dry-run", action="store_true", help="Print target paths without writing files.")
-    skills_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
-    skills_parser.set_defaults(
-        func=lambda args: install_skills(
-            repo_root(args.root),
-            args.agents,
-            args.project,
-            args.dry_run,
-            args.json,
+    for install_command in ("install-skills", "install-skill"):
+        skills_parser = sub.add_parser(
+            install_command,
+            help="Install Word AI agent skills for Codex, Claude Code, and compatible clients.",
         )
-    )
+        skills_parser.add_argument(
+            "--agents",
+            default="auto",
+            help="Comma-separated targets: auto, all, codex, codex-legacy, claude, cursor, windsurf, copilot, openclaw.",
+        )
+        skills_parser.add_argument("--project", action="store_true", help="Also install repository-scoped .agents and .claude skills.")
+        skills_parser.add_argument("--dry-run", action="store_true", help="Print target paths without writing files.")
+        skills_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
+        skills_parser.set_defaults(
+            func=lambda args: install_skills(
+                repo_root(args.root),
+                args.agents,
+                args.project,
+                args.dry_run,
+                args.json,
+            )
+        )
 
     args = parser.parse_args(argv)
     return int(args.func(args))
