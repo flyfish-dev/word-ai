@@ -174,7 +174,9 @@ jobs:
           if [ -n "${NPM_TOKEN:-}" ]; then
             printf '//registry.npmjs.org/:_authToken=%s\n' "$NPM_TOKEN" > "$HOME/.npmrc"
           fi
-          npm publish --provenance --access public
+          if ! npm publish --provenance --access public; then
+            echo "::warning title=Scoped npm publish skipped::Could not publish @flyfish-dev/word-ai@${VERSION}. Configure npm trusted publishing or NPM_TOKEN permissions for the @flyfish-dev scope."
+          fi
 
       - name: Publish unscoped npm compatibility package
         env:
@@ -197,7 +199,9 @@ jobs:
           data["description"] = "Unscoped compatibility package for the Word AI MCP server and Office.js bridge"
           path.write_text(json.dumps(data, indent=2) + "\n")
           PY
-          npm publish --provenance --access public
+          if ! npm publish --provenance --access public; then
+            echo "::warning title=Unscoped npm publish skipped::Could not publish word-ai-mcp@${VERSION}. Configure npm trusted publishing or NPM_TOKEN permissions for the package."
+          fi
 
       - name: Install mcp-publisher
         run: |
