@@ -12,7 +12,7 @@
     {
       "registryType": "mcpb",
       "identifier": "https://github.com/flyfish-dev/word-ai/releases/download/v0.8.5/word-ai-0.8.5.mcpb",
-      "fileSha256": "93e621369e5f5f3f37abc4afa19d80f34b84c950cefca71f9229855d35437e0d",
+      "fileSha256": "bd066760c669554c9d8e7ec2e058918fa0301b289a5bcdfda745d898bcb028e8",
       "transport": {
         "type": "stdio"
       }
