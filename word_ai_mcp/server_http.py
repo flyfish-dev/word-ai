@@ -266,6 +266,7 @@ def make_handler(root: str, allow_write: bool, token: str, allowed_roots: list[s
                         "auth_required": True,
                         "allow_write": allow_write,
                         "allowed_roots": [str(p) for p in server.allowed_roots],
+                        "offline_engine": server.offline_engine_status(),
                     },
                 )
             elif path == "/office/capabilities":
@@ -276,6 +277,7 @@ def make_handler(root: str, allow_write: bool, token: str, allowed_roots: list[s
                         "name": "word-ai-office-bridge",
                         "allow_write": allow_write,
                         "auth_required": True,
+                        "offline_engine": server.offline_engine_status(),
                         "endpoints": [
                             "/office/read",
                             "/office/build-patchset",

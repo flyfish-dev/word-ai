@@ -21,7 +21,7 @@
 - 不直接操作 DOCX 二进制或 ZIP 包。
 - 不生成完整文档，只生成目标锚点的新文本或受限表格单元格内容。
 
-### 2.2 MCP Server
+### 2.2 MCP Server / Python facade
 
 职责：
 
@@ -31,6 +31,7 @@
 - 默认不覆盖原文档。
 - 每次写操作生成审计记录。
 - 维护 `.wordai/sessions` 文件队列，把 Codex 的 `word_session_*` 命令转交给 Office.js taskpane。
+- 为本地 agent、npm、MCPB、Office bridge 提供轻量 facade；离线文件事务默认委托 .NET Open XML 后端。
 
 建议工具分层：
 
@@ -42,7 +43,7 @@
 - Word session tools：`word_session_list`、`word_session_read_content_control`、`word_session_preview_patchset`、`word_session_apply_patchset`、`word_session_rollback`。
 - OfficeCLI auxiliary tools：`officecli_view_html`、`officecli_view_screenshot`、`officecli_view_issues`、`officecli_query`、`officecli_validate`，仅作为只读/低风险证据，不作为默认写入后端。
 
-### 2.3 Open XML SDK 内核
+### 2.3 .NET Open XML SDK 内核
 
 职责：
 
@@ -50,6 +51,8 @@
 - 用 `SdtElement`、`Paragraph`、`TableCell` 等对象定点回写。
 - 使用 `OpenXmlReader` 做超大文档 streaming index。
 - 保持 `styles.xml`、`numbering.xml`、`rels`、`media`、`settings.xml` 原样不动。
+- 作为 `docx_assess_patchset`、`docx_dry_run_patchset`、`docx_apply_patchset`、`docx_validate` 的默认权威后端。
+- 优先以 native binary 分发；没有 native binary 时可使用 Release DLL；源码开发时才需要 .NET SDK。
 
 ### 2.4 Office.js 加载项
 
@@ -66,7 +69,7 @@
 - 对当前打开的 Word 文档执行内容控件级 `word_session_apply_patchset`，写入前先 live preflight，再用客户端 SHA-256 校验打开文档文本没有漂移。
 - 返回 Office.js 写入审计、触达内容控件、校验结果和 rollback PatchSet。
 
-Office.js 不应承担批量后台处理主职责，因为超大文档、批处理、字段刷新和复杂错误恢复更适合后端内核或 Word 桌面自动化。当前最佳分工是：Office.js 做会话交互和人工审批，本地 MCP/.NET/Python 内核做权威文件事务。
+Office.js 不应承担批量后台处理主职责，因为超大文档、批处理、字段刷新和复杂错误恢复更适合后端内核或 Word 桌面自动化。当前最佳分工是：Office.js 做会话交互和人工审批，本地 MCP facade 调用 .NET Open XML 后端做权威文件事务；Python OOXML 只保留为读取、索引和无 .NET 环境的 fallback/reference。
 
 ### 2.5 Office Bridge
 
@@ -179,6 +182,13 @@ prepare
 - 回写时：只打开并修改目标 XML part。
 - 验证时：先做 ZIP part hash，再做关键 OOXML 结构计数，再按需做渲染 diff。
 
+.NET 后端选择顺序：
+
+1. `WORD_AI_DOTNET_EXE` 或打包的 `native/<rid>/WordAi.OpenXml`。
+2. `WORD_AI_DOTNET_DLL` 或本地 Release DLL。
+3. 本地源码工程 `dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj`。
+4. `WORD_AI_ENGINE=auto` 且 .NET 不可用时才回退 Python。
+
 生产版 .NET 内核建议：
 
 - `OpenXmlReader` streaming 扫描段落和 SDT。
@@ -189,15 +199,15 @@ prepare
 
 ### MVP
 
-- Python stdio MCP + OOXML 定点修改。
+- Python stdio MCP facade + .NET Open XML 后端；Python OOXML 作为 fallback。
 - 内容控件锚点。
 - JSON sidecar 索引。
 - 结构验证和审计。
 
 ### Production
 
-- MCP facade：TypeScript 或 Python。
-- 核心引擎：.NET Open XML SDK。
+- MCP facade：TypeScript、Python 或 .NET 均可；本项目当前使用 Python 是为了本地 agent 分发和 Office bridge 兼容。
+- 核心引擎：.NET Open XML SDK native binary。
 - 索引库：SQLite/FTS 或 PostgreSQL。
 - Word 桌面补强：Office.js 创建锚点、审批 PatchSet、当前会话内容控件写入；Word COM/Aspose/Syncfusion 刷新字段和 PDF。
 - CI：样本文档库 + OpenXML validation + render diff。

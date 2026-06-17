@@ -20,6 +20,7 @@ python -m compileall word_ai_mcp scripts
 PYTHONPATH=. python scripts/run_smoke_test.py
 PYTHONPATH=. python scripts/run_structure_regression.py
 PYTHONPATH=. python scripts/run_outline_regression.py
+PYTHONPATH=. python scripts/run_engine_selection_regression.py
 PYTHONPATH=. python scripts/run_word_session_smoke.py
 PYTHONPATH=. python scripts/run_dotnet_regression.py
 PYTHONPATH=. python scripts/run_office_bridge_smoke.py
@@ -40,6 +41,7 @@ Results:
 - Smoke test: passed.
 - Structure regression: passed.
 - Outline regression: passed for localized heading styles, numeric heading style IDs, direct `w:outlineLvl`, and TOC field exclusion.
+- Engine selection regression: passed; default `auto` selected the .NET Open XML backend when available and explicit `engine=python` remained available for fallback comparison.
 - Word session command-queue smoke: passed.
 - .NET build: passed with 0 warnings and 0 errors.
 - .NET PatchSet regression: passed.
@@ -133,7 +135,8 @@ dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
 dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release -- assess examples/sample_contract.docx examples/patches/replace_srs_sections.json
 dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release -- dry-run examples/sample_contract.docx examples/patches/replace_srs_sections.json false
 dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release -- apply examples/sample_contract.docx examples/patches/replace_srs_sections.json examples/sample_contract.dotnet.edited.docx
-dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release -- validate examples/sample_contract.docx examples/sample_contract.dotnet.edited.docx
+dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release -- validate examples/sample_contract.docx examples/sample_contract.dotnet.edited.docx <validation-options.json>
+scripts/publish_dotnet.sh
 ```
 
 Results:
@@ -143,7 +146,8 @@ Results:
 - `assess`: `ok=true`, 3 content-control operations resolved.
 - `dry-run`: `validation.ok=true`, output removed when `keep_output=false`.
 - `apply`: wrote `examples/sample_contract.dotnet.edited.docx` and `examples/sample_contract.dotnet.edited.audit.json`.
-- `validate`: `ok=true`, changed parts `["word/document.xml"]`, new OpenXmlValidator errors `0`.
+- `validate`: supports optional validation-options JSON for touched scopes; `ok=true`, changed parts `["word/document.xml"]`, new OpenXmlValidator errors `0`.
+- Native binary publish script: passed locally for the detected runtime identifier when executed.
 - `scripts/run_dotnet_regression.py`: passed all C# PatchSet operations:
   `replace_content_control_text`, `replace_text_in_content_control`, `append_content_control_text`, `prepend_content_control_text`, `replace_table_cell_text`, `replace_paragraph_text`, `append_table_row`, `add_comment`, `insert_paragraph_after`, `insert_paragraph_before`, `wrap_paragraph_with_content_control`.
 

@@ -24,7 +24,7 @@
 | 未触达内容控件 hash 不变 | 已实现 | 必须 | 阻断 |
 | 未触达表格 hash 不变 | 已实现 | 必须 | 阻断 |
 | 未触达 `w14:paraId` 段落 hash 不变 | 已实现 | 必须 | 阻断 |
-| OpenXmlValidator | .NET 骨架待接入 | 必须 | 阻断 |
+| OpenXmlValidator | 已通过 .NET Open XML 后端接入，并比较源/目标新增 schema 错误 | 必须 | 阻断 |
 | Word 打开无修复提示 | 手工/渲染间接验证 | CI 自动化 | 阻断 |
 | 目录/字段刷新 | 不自动刷新 | Word COM/Aspose/Syncfusion | 标记待刷新 |
 | 渲染页数一致 | 示例已渲染检查 | CI 必须 | 阻断/人工复核 |

@@ -41,17 +41,17 @@
 35. `docx_list_headers_footers` — Read-only. Inspect header/footer parts and visible text without modifying them.
 36. `docx_list_notes` — Read-only. Inspect footnotes/endnotes when present.
 37. `docx_list_revisions` — Read-only. List tracked-change nodes with previews and hashes.
-38. `docx_assess_patchset` — Read-only. Resolve PatchSet targets and report risks, touched objects and precondition gaps.
-39. `docx_plan_patchset` — Read-only. Alias-grade PatchSet planning assessment.
-40. `docx_preflight_patchset` — Write-temp. Dry-run PatchSet to a temporary copy, validate, and remove output unless keep_output=true.
-41. `docx_dry_run_patchset` — Write-temp. Same as preflight; useful for explicit Codex dry-run stage.
+38. `docx_assess_patchset` — Read-only. Resolve PatchSet targets and report risks, touched objects and precondition gaps. Accepts `engine=auto|dotnet|python`; default auto selects .NET when available.
+39. `docx_plan_patchset` — Read-only. Alias-grade PatchSet planning assessment. Accepts `engine=auto|dotnet|python`.
+40. `docx_preflight_patchset` — Write-temp. Dry-run PatchSet to a temporary copy, validate, and remove output unless keep_output=true. Accepts `engine=auto|dotnet|python`.
+41. `docx_dry_run_patchset` — Write-temp. Same as preflight; useful for explicit Codex dry-run stage. Accepts `engine=auto|dotnet|python`.
 42. `docx_write_index` — Write-sidecar only. Write .wordai index JSON; does not modify DOCX.
 43. `docx_backup` — Write-sidecar only. Create timestamped backup; does not modify original DOCX.
 44. `docx_restore_backup` — Write. Restore a backup to target_path.
 45. `docx_rollback` — Write. Restore from backup and optionally back up replaced file first.
-46. `docx_apply_patchset` — Write. Apply constrained PatchSet to a new DOCX plus audit JSON; validation gates final commit.
-47. `docx_validate` — Read-only. Validate structural invariants. Supply touched_* for intentional edits.
-48. `docx_compare_structure` — Read-only. Same validation report phrased as structural comparison.
+46. `docx_apply_patchset` — Write. Apply constrained PatchSet to a new DOCX plus audit JSON; validation gates final commit. Accepts `engine=auto|dotnet|python`; default auto selects .NET when available.
+47. `docx_validate` — Read-only. Validate structural invariants. Supply touched_* for intentional edits. Accepts `engine=auto|dotnet|python`; default auto selects .NET when available.
+48. `docx_compare_structure` — Read-only. Same validation report phrased as structural comparison. Accepts `engine=auto|dotnet|python`.
 49. `docx_text_diff` — Read-only. Unified visible-text diff for human review after validation.
 50. `word_session_list` — Read-only. List active Office.js taskpane sessions registered by an open Word document.
 51. `word_session_snapshot` — Read-only. Return the latest content-control snapshot for an open Word session. If session_id is omitted, uses the most recently active session.

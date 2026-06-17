@@ -17,9 +17,9 @@ Word AI is not a document generator. It is a document transaction system for AI-
 
 Codex, OpenAI Agents, or another MCP client reads document structure, identifies target anchors, asks the model to generate replacement text, and submits a constrained PatchSet.
 
-### MCP Server
+### MCP Server / Python Facade
 
-The Python MCP server exposes 63 tools:
+The Python MCP facade exposes 63 tools:
 
 - package inspection and health checks
 - heading, paragraph, bookmark, and content-control navigation
@@ -30,20 +30,25 @@ The Python MCP server exposes 63 tools:
 
 All paths are scoped to the configured primary root plus explicit `--allow-root` directories. Relative paths resolve under the primary root; absolute paths must be inside one of the allowed roots.
 
-### Python OOXML Engine
+The facade exists for MCP compatibility, local path policy, Office.js bridge endpoints, installation ergonomics, and live-session command queues. Offline file transactions are delegated to the .NET backend by default.
 
-The Python engine implements the local-first reference behavior:
+### Python OOXML Reference / Fallback
+
+The Python OOXML layer remains available for read/index helpers and fallback/reference behavior:
 
 - read DOCX package parts
 - resolve content controls, paragraphs, and tables
-- apply targeted XML edits
-- preserve non-target package parts
-- validate structural invariants
-- write audit JSON
+- provide sidecar indexes and text diffs
+- fall back for constrained PatchSet writes only when .NET is unavailable and `WORD_AI_ENGINE=auto`
 
 ### .NET Open XML SDK Engine
 
-The .NET 8 engine provides a production-oriented Open XML SDK implementation. It supports the same PatchSet model and uses typed Open XML APIs plus OpenXmlValidator checks.
+The .NET 8 engine is the authoritative offline DOCX transaction backend. It supports the same PatchSet model and uses typed Open XML APIs plus OpenXmlValidator checks. The runtime selects backends in this order:
+
+1. `WORD_AI_DOTNET_EXE` or a packaged native executable under `native/<rid>/` or `dist/native/<rid>/`.
+2. `WORD_AI_DOTNET_DLL` or the local Release DLL.
+3. Local source project via `dotnet run --project`.
+4. Python fallback only when .NET is unavailable and `WORD_AI_ENGINE=auto`.
 
 ### Office.js Taskpane
 
@@ -124,7 +129,8 @@ Word AI blocks or reports risk for:
 
 ## Production Recommendations
 
-- Use the .NET Open XML SDK engine as the authoritative batch editing engine.
+- Use the .NET Open XML SDK native binary as the authoritative batch editing engine.
+- Set `WORD_AI_ENGINE=dotnet` in production so missing backends fail fast instead of falling back.
 - Store document indexes in SQLite, PostgreSQL, or another durable store for large document sets.
 - Use render/PDF diff for release-grade validation.
 - Use Word COM, Aspose, or Syncfusion for field refresh and PDF export where Office.js APIs are insufficient.

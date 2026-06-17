@@ -12,6 +12,18 @@
 6. **不变量验证阻断交付**：未授权 part 变化、非目标对象 hash 变化、表格/图片/字段/批注/修订计数异常，均导致 `ok=false`。
 7. **多 root 路径白名单**：相对路径基于主 `--root` 解析；外部绝对路径必须位于显式 `--allow-root` 或 `WORD_AI_ALLOWED_ROOTS` 白名单内。
 
+## 离线引擎选择
+
+离线文件事务的默认后端是 .NET Open XML SDK。Python 负责 MCP facade、路径策略、读取索引、Office.js bridge 和 fallback/reference。
+
+`WORD_AI_ENGINE=auto|dotnet|python` 控制默认行为：
+
+- `auto`：优先 .NET；找不到 native executable、Release DLL 或源码 project 时才回退 Python。
+- `dotnet`：强制 .NET，后端缺失或失败时直接报错，推荐生产环境使用。
+- `python`：强制 Python fallback，主要用于对照测试和开发调试。
+
+单次工具调用也可以在 `docx_assess_patchset`、`docx_dry_run_patchset`、`docx_apply_patchset`、`docx_validate` 中传入 `engine` 覆盖默认值。返回结果必须包含实际 `engine`，便于审计。
+
 ## 推荐调用链
 
 ```text

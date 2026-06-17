@@ -19,6 +19,14 @@ Never silently fall back from a requested live Word session to offline file edit
 
 For file paths outside the repository, use Word AI only when the path is inside the configured primary `--root` or an explicit `--allow-root` directory. Add common user document folders such as Downloads, Documents, and Desktop to Codex config instead of copying source files into the repository.
 
+## Offline Engine
+
+Offline `docx_*` PatchSet transactions default to the .NET Open XML backend when available. Python is the MCP facade, read/index layer, Office.js bridge runtime, and fallback/reference path.
+
+- Default: `WORD_AI_ENGINE=auto`, which selects .NET native executable, .NET DLL, or local .NET project before falling back to Python.
+- Production: prefer `WORD_AI_ENGINE=dotnet` so a missing .NET backend fails fast.
+- Development fallback: use `engine: "python"` only for comparison or when .NET is unavailable.
+
 ## Offline DOCX Workflow
 
 1. Run `docx_health_check`.

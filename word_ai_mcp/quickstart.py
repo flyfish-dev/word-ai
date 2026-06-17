@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from .openxml_engine import dotnet_status
+
 
 WRITE_APPROVAL_TOOLS = [
     "docx_export_plain_text",
@@ -137,6 +139,7 @@ def doctor(root: Path) -> int:
     node = command_version(["node", "--version"])
     npm = command_version(["npm", "--version"])
     dotnet = command_version(["dotnet", "--version"])
+    openxml = dotnet_status()
     officecli_path = find_officecli()
     officecli = command_version([str(officecli_path), "--version"]) if officecli_path else None
     checks.extend(
@@ -144,6 +147,11 @@ def doctor(root: Path) -> int:
             ("node", node is not None, node or "not found"),
             ("npm", npm is not None, npm or "not found"),
             ("dotnet", dotnet is not None, dotnet or "not found"),
+            (
+                "openxml backend",
+                bool(openxml.get("available")),
+                f"{openxml.get('mode')} ({openxml.get('runtime_id')})" if openxml.get("available") else str(openxml.get("reason")),
+            ),
             ("office-addin package", (root / "office-addin" / "package.json").exists(), "office-addin/package.json"),
             (
                 "office-addin node_modules",

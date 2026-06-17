@@ -24,8 +24,8 @@ AI systems are good at generating text, but Word documents are structured packag
 - **Content-control first editing** using stable Word content control tags such as `WORD-AI:SRS:1.0:overview`.
 - **Strong preconditions** with `source_sha256`, `expected_old_sha256`, and `expected_old_text`.
 - **Structure validation** for package parts, content controls, tables, paragraphs, fields, comments, images, revisions, and protected body blocks.
-- **Python MCP runtime** for local agent integration.
-- **.NET 8 Open XML SDK engine** for production-grade typed Open XML processing.
+- **Python MCP facade and bridge runtime** for local agent integration, path policy, session queues, and distribution compatibility.
+- **.NET 8 Open XML SDK engine** as the authoritative offline DOCX transaction backend, using a packaged native binary or Release DLL when available.
 - **Office.js taskpane** for Word-side anchors, PatchSet preview, dry-run, apply, and open-document content-control editing with hash checks.
 - **Live Word session tools** (`word_session_*`) so Codex can read, preview, apply, and roll back edits in the currently open Word document through Office.js.
 - **Local HTTP bridge** secured by a local token and localhost-only CORS for Office add-in workflows.
@@ -38,8 +38,8 @@ Codex / Agent / MCP Client
         v
 Word AI MCP Server
         |
-        +--> Python OOXML engine
-        +--> .NET Open XML SDK engine
+        +--> Python MCP facade / read indexes / Office bridge
+        +--> .NET Open XML SDK backend for offline PatchSet transactions
         +--> Office bridge HTTP API
         +--> File-backed Word session command queue
         |
@@ -75,7 +75,7 @@ bash scripts/install.sh
 bash scripts/start.sh
 ```
 
-This installs the Python MCP server, builds the Office.js taskpane, builds the .NET Open XML engine when .NET SDK 8 is available, writes `.wordai/codex-config.toml`, and installs the `word-ai` skill into Codex, Claude Code, and detected compatible agent clients.
+This installs the Python MCP facade, builds the Office.js taskpane, builds the .NET Open XML backend when .NET SDK 8 is available, writes `.wordai/codex-config.toml`, and installs the `word-ai` skill into Codex, Claude Code, and detected compatible agent clients.
 
 Install or refresh only the Agent Skill:
 
@@ -108,6 +108,7 @@ Developer checks:
 PYTHONPATH=. .venv/bin/python scripts/run_smoke_test.py
 PYTHONPATH=. .venv/bin/python scripts/run_structure_regression.py
 PYTHONPATH=. .venv/bin/python scripts/run_outline_regression.py
+PYTHONPATH=. .venv/bin/python scripts/run_engine_selection_regression.py
 ```
 
 Build the .NET engine:
@@ -115,8 +116,20 @@ Build the .NET engine:
 ```bash
 dotnet --version  # requires .NET SDK 8
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
+scripts/publish_dotnet.sh   # optional: native binary in dist/native/<rid>
 PYTHONPATH=. .venv/bin/python scripts/run_dotnet_regression.py
 ```
+
+## Offline Engine Selection
+
+Offline file transactions use the .NET Open XML backend by default when it is available. Selection order is:
+
+1. `WORD_AI_DOTNET_EXE` or a packaged native executable under `native/<rid>/` or `dist/native/<rid>/`.
+2. `WORD_AI_DOTNET_DLL` or the local Release DLL at `dotnet/WordAi.OpenXml/bin/Release/net8.0/WordAi.OpenXml.dll`.
+3. Local source project via `dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj`.
+4. Python OOXML fallback only when .NET is unavailable and `WORD_AI_ENGINE=auto`.
+
+Control it with `WORD_AI_ENGINE=auto|dotnet|python`, or pass `engine` to `docx_assess_patchset`, `docx_dry_run_patchset`, `docx_apply_patchset`, and `docx_validate`. Use `WORD_AI_ENGINE=dotnet` in production to fail fast instead of silently falling back.
 
 Build the Office add-in:
 
@@ -389,8 +402,8 @@ Word AI 是一个开源 MCP Server 与 Office.js Bridge，用于安全、可审�
 - **优先使用内容控件 tag**，例如 `WORD-AI:SRS:1.0:overview`。
 - **并发安全前置条件**：`source_sha256`、`expected_old_sha256`、`expected_old_text`。
 - **结构验证**：保护 package parts、内容控件、表格、段落、字段、图片、批注、修订痕迹和正文块顺序。
-- **Python MCP Server**，便于本地 Agent 集成。
-- **.NET 8 Open XML SDK 引擎**，面向生产级 typed Open XML 处理。
+- **Python MCP facade 与 bridge runtime**，负责本地 Agent 集成、路径策略、session 队列和分发兼容。
+- **.NET 8 Open XML SDK 引擎**，作为离线 DOCX 事务的权威后端；优先使用打包 native 二进制或 Release DLL。
 - **Office.js taskpane**，支持创建/列出锚点、构建 PatchSet、预览、dry-run、apply，以及对当前打开的 Word 文档进行 hash 校验后的内容控件写入。
 - **Word 会话 MCP 工具**，Codex 可以通过 `word_session_*` 读取当前打开文档、预览 PatchSet、调用 Office.js 写入并获取审计和 rollback PatchSet。
 
@@ -420,7 +433,7 @@ bash scripts/install.sh
 bash scripts/start.sh
 ```
 
-安装脚本会安装 Python MCP 依赖、构建 Office.js taskpane、在可用时构建 .NET Open XML 引擎、生成 `.wordai/codex-config.toml`，并把正式 `word-ai` Skill 安装到 Codex、Claude Code 以及已检测到的兼容 Agent 客户端。
+安装脚本会安装 Python MCP facade 依赖、构建 Office.js taskpane、在可用时构建 .NET Open XML 后端、生成 `.wordai/codex-config.toml`，并把正式 `word-ai` Skill 安装到 Codex、Claude Code 以及已检测到的兼容 Agent 客户端。
 
 只安装或刷新 Agent Skill：
 
@@ -453,6 +466,7 @@ powershell -ExecutionPolicy Bypass -File scripts\start.ps1
 PYTHONPATH=. .venv/bin/python scripts/run_smoke_test.py
 PYTHONPATH=. .venv/bin/python scripts/run_structure_regression.py
 PYTHONPATH=. .venv/bin/python scripts/run_outline_regression.py
+PYTHONPATH=. .venv/bin/python scripts/run_engine_selection_regression.py
 ```
 
 构建 .NET 引擎：
@@ -460,8 +474,20 @@ PYTHONPATH=. .venv/bin/python scripts/run_outline_regression.py
 ```bash
 dotnet --version  # 需要 .NET SDK 8
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
+scripts/publish_dotnet.sh   # 可选：生成 dist/native/<rid> native 二进制
 PYTHONPATH=. .venv/bin/python scripts/run_dotnet_regression.py
 ```
+
+## 离线引擎选择
+
+离线文件事务默认优先使用 .NET Open XML 后端。选择顺序：
+
+1. `WORD_AI_DOTNET_EXE` 或 `native/<rid>/`、`dist/native/<rid>/` 下的 native executable。
+2. `WORD_AI_DOTNET_DLL` 或本地 Release DLL：`dotnet/WordAi.OpenXml/bin/Release/net8.0/WordAi.OpenXml.dll`。
+3. 本地源码工程：`dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj`。
+4. 只有在 `WORD_AI_ENGINE=auto` 且 .NET 不可用时，才回退到 Python OOXML。
+
+可通过 `WORD_AI_ENGINE=auto|dotnet|python` 控制，也可在 `docx_assess_patchset`、`docx_dry_run_patchset`、`docx_apply_patchset`、`docx_validate` 调用中传入 `engine`。生产环境建议设置 `WORD_AI_ENGINE=dotnet`，让后端缺失时直接失败，而不是静默回退。
 
 构建 Office 加载项：
 

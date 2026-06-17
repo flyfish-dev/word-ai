@@ -59,6 +59,15 @@ from .ooxml import (
     validate_structure,
     write_sidecar_index,
 )
+from .openxml_engine import (
+    dotnet_apply_patchset,
+    dotnet_assess_patchset,
+    dotnet_dry_run_patchset,
+    dotnet_status,
+    dotnet_validate,
+    mark_python_result,
+    select_engine,
+)
 from .session_store import (
     enqueue_command,
     get_command,
@@ -196,10 +205,32 @@ class WordAiMcpServer:
         if not self.allow_write:
             raise PermissionError("Server is running in read-only mode")
 
+    def offline_engine_status(self) -> JSON:
+        requested = os.environ.get("WORD_AI_ENGINE", "auto")
+        try:
+            selected, detail = select_engine(requested)
+        except Exception as exc:
+            selected = "unavailable"
+            detail = {"error": str(exc)}
+        return {
+            "requested": requested,
+            "selected": selected,
+            "dotnet": dotnet_status(),
+            "detail": detail,
+        }
+
+    def _offline_engine(self, args: JSON) -> tuple[str, JSON | None]:
+        return select_engine(args.get("engine"))
+
+    @staticmethod
+    def _python_result(result: Any, detail: JSON | None = None) -> Any:
+        return mark_python_result(result, detail)
+
     def list_tools(self) -> list[JSON]:
         strp = {"type": "string"}
         intp = {"type": "integer", "minimum": 1}
         boolp = {"type": "boolean"}
+        enginep = {"type": "string", "enum": ["auto", "dotnet", "python"], "default": "auto"}
         patchset = {"$ref": "https://word-ai.local/schemas/patchset.schema.json"}
         wait_props = {
             "wait": {"type": "boolean", "default": True},
@@ -256,17 +287,17 @@ class WordAiMcpServer:
             ("docx_list_headers_footers", "Read-only. Inspect header/footer parts and visible text without modifying them.", {"docx_path": strp, "max_preview": {"type": "integer", "default": 500}}, ["docx_path"]),
             ("docx_list_notes", "Read-only. Inspect footnotes/endnotes when present.", {"docx_path": strp, "max_preview": {"type": "integer", "default": 500}}, ["docx_path"]),
             ("docx_list_revisions", "Read-only. List tracked-change nodes with previews and hashes.", {"docx_path": strp, "max_preview": {"type": "integer", "default": 240}}, ["docx_path"]),
-            ("docx_assess_patchset", "Read-only. Resolve PatchSet targets and report risks, touched objects and precondition gaps.", {"docx_path": strp, "patchset": patchset}, ["docx_path", "patchset"]),
-            ("docx_plan_patchset", "Read-only. Alias-grade PatchSet planning assessment.", {"docx_path": strp, "patchset": patchset}, ["docx_path", "patchset"]),
-            ("docx_preflight_patchset", "Write-temp. Dry-run PatchSet to a temporary copy, validate, and remove output unless keep_output=true.", {"docx_path": strp, "patchset": patchset, "keep_output": {"type": "boolean", "default": False}}, ["docx_path", "patchset"]),
-            ("docx_dry_run_patchset", "Write-temp. Same as preflight; useful for explicit Codex dry-run stage.", {"docx_path": strp, "patchset": patchset, "keep_output": {"type": "boolean", "default": False}}, ["docx_path", "patchset"]),
+            ("docx_assess_patchset", "Read-only. Resolve PatchSet targets and report risks, touched objects and precondition gaps. Defaults to the .NET Open XML backend when available.", {"docx_path": strp, "patchset": patchset, "engine": enginep}, ["docx_path", "patchset"]),
+            ("docx_plan_patchset", "Read-only. Alias-grade PatchSet planning assessment. Defaults to the .NET Open XML backend when available.", {"docx_path": strp, "patchset": patchset, "engine": enginep}, ["docx_path", "patchset"]),
+            ("docx_preflight_patchset", "Write-temp. Dry-run PatchSet to a temporary copy, validate, and remove output unless keep_output=true. Defaults to the .NET Open XML backend when available.", {"docx_path": strp, "patchset": patchset, "keep_output": {"type": "boolean", "default": False}, "engine": enginep}, ["docx_path", "patchset"]),
+            ("docx_dry_run_patchset", "Write-temp. Same as preflight; useful for explicit Codex dry-run stage. Defaults to the .NET Open XML backend when available.", {"docx_path": strp, "patchset": patchset, "keep_output": {"type": "boolean", "default": False}, "engine": enginep}, ["docx_path", "patchset"]),
             ("docx_write_index", "Write-sidecar only. Write .wordai index JSON; does not modify DOCX.", {"docx_path": strp, "out_path": strp}, ["docx_path"]),
             ("docx_backup", "Write-sidecar only. Create timestamped backup; does not modify original DOCX.", {"docx_path": strp, "backup_dir": strp}, ["docx_path"]),
             ("docx_restore_backup", "Write. Restore a backup to target_path.", {"backup_path": strp, "target_path": strp}, ["backup_path", "target_path"]),
             ("docx_rollback", "Write. Restore from backup and optionally back up replaced file first.", {"backup_path": strp, "restore_path": strp, "make_backup_of_current": {"type": "boolean", "default": True}}, ["backup_path", "restore_path"]),
-            ("docx_apply_patchset", "Write. Apply constrained PatchSet to a new DOCX plus audit JSON; validation gates final commit.", {"docx_path": strp, "output_path": strp, "patchset": patchset}, ["docx_path", "patchset"]),
-            ("docx_validate", "Read-only. Validate structural invariants. Supply touched_* for intentional edits.", validate_props, ["source_docx", "target_docx"]),
-            ("docx_compare_structure", "Read-only. Same validation report phrased as structural comparison.", validate_props, ["source_docx", "target_docx"]),
+            ("docx_apply_patchset", "Write. Apply constrained PatchSet to a new DOCX plus audit JSON; validation gates final commit. Defaults to the .NET Open XML backend when available.", {"docx_path": strp, "output_path": strp, "patchset": patchset, "engine": enginep}, ["docx_path", "patchset"]),
+            ("docx_validate", "Read-only. Validate structural invariants. Supply touched_* for intentional edits. Defaults to the .NET Open XML backend when available.", {**validate_props, "engine": enginep}, ["source_docx", "target_docx"]),
+            ("docx_compare_structure", "Read-only. Same validation report phrased as structural comparison. Defaults to the .NET Open XML backend when available.", {**validate_props, "engine": enginep}, ["source_docx", "target_docx"]),
             ("docx_text_diff", "Read-only. Unified visible-text diff for human review after validation.", {"source_docx": strp, "target_docx": strp, "context": {"type": "integer", "default": 2}}, ["source_docx", "target_docx"]),
             ("word_session_list", "Read-only. List active Office.js taskpane sessions registered by an open Word document.", {"include_inactive": {"type": "boolean", "default": False}}, []),
             ("word_session_snapshot", "Read-only. Return the latest content-control snapshot for an open Word session. If session_id is omitted, uses the most recently active session.", {"session_id": strp}, []),
@@ -406,18 +437,36 @@ class WordAiMcpServer:
 
     # Patch / write / validation lifecycle.
     def tool_docx_assess_patchset(self, args: JSON) -> Any:
-        return assess_patchset(self._resolve_path(args["docx_path"]), args["patchset"])
+        docx_path = self._resolve_path(args["docx_path"])
+        engine, detail = self._offline_engine(args)
+        if engine == "dotnet":
+            return dotnet_assess_patchset(docx_path, args["patchset"])
+        return self._python_result(assess_patchset(docx_path, args["patchset"]), detail)
 
     def tool_docx_plan_patchset(self, args: JSON) -> Any:
-        return plan_patchset(self._resolve_path(args["docx_path"]), args["patchset"])
+        docx_path = self._resolve_path(args["docx_path"])
+        engine, detail = self._offline_engine(args)
+        if engine == "dotnet":
+            return dotnet_assess_patchset(docx_path, args["patchset"])
+        return self._python_result(plan_patchset(docx_path, args["patchset"]), detail)
 
     def tool_docx_preflight_patchset(self, args: JSON) -> Any:
         self._ensure_write()
-        return dry_run_patchset(self._resolve_path(args["docx_path"]), args["patchset"], bool(args.get("keep_output", False)))
+        docx_path = self._resolve_path(args["docx_path"])
+        keep_output = bool(args.get("keep_output", False))
+        engine, detail = self._offline_engine(args)
+        if engine == "dotnet":
+            return dotnet_dry_run_patchset(docx_path, args["patchset"], keep_output)
+        return self._python_result(dry_run_patchset(docx_path, args["patchset"], keep_output), detail)
 
     def tool_docx_dry_run_patchset(self, args: JSON) -> Any:
         self._ensure_write()
-        return dry_run_patchset(self._resolve_path(args["docx_path"]), args["patchset"], bool(args.get("keep_output", False)))
+        docx_path = self._resolve_path(args["docx_path"])
+        keep_output = bool(args.get("keep_output", False))
+        engine, detail = self._offline_engine(args)
+        if engine == "dotnet":
+            return dotnet_dry_run_patchset(docx_path, args["patchset"], keep_output)
+        return self._python_result(dry_run_patchset(docx_path, args["patchset"], keep_output), detail)
 
     def tool_docx_write_index(self, args: JSON) -> Any:
         self._ensure_write()
@@ -437,7 +486,12 @@ class WordAiMcpServer:
 
     def tool_docx_apply_patchset(self, args: JSON) -> Any:
         self._ensure_write()
-        return apply_patchset(self._resolve_path(args["docx_path"]), args["patchset"], self._maybe_resolve(args.get("output_path")))
+        docx_path = self._resolve_path(args["docx_path"])
+        output_path = self._maybe_resolve(args.get("output_path"))
+        engine, detail = self._offline_engine(args)
+        if engine == "dotnet":
+            return dotnet_apply_patchset(docx_path, args["patchset"], output_path)
+        return self._python_result(apply_patchset(docx_path, args["patchset"], output_path), detail)
 
     def _validation_kwargs(self, args: JSON, target_docx: str | None = None) -> dict[str, Any]:
         """Build validation kwargs and, when possible, auto-load touched scopes
@@ -459,7 +513,7 @@ class WordAiMcpServer:
                     audit = json.loads(audit_path.read_text(encoding="utf-8"))
                     touched = ((audit.get("safety_assessment") or {}).get("touched") or {})
                     touched_tags = touched.get("content_control_tags") or []
-                    touched_para_ids = touched.get("paraIds") or []
+                    touched_para_ids = touched.get("paraIds") or touched.get("para_ids") or []
                     touched_paragraph_indices = touched.get("paragraph_indices") or []
                     touched_table_indices = touched.get("table_indices") or []
                     touched_table_cells = touched.get("table_cells") or []
@@ -491,17 +545,22 @@ class WordAiMcpServer:
     def tool_docx_validate(self, args: JSON) -> Any:
         source = self._resolve_path(args["source_docx"])
         target = self._resolve_path(args["target_docx"])
-        return validate_structure(source, target, bool(args.get("strict", True)), **self._validation_kwargs(args, target)).to_dict()
+        kwargs = self._validation_kwargs(args, target)
+        strict = bool(args.get("strict", True))
+        engine, detail = self._offline_engine(args)
+        if engine == "dotnet":
+            return dotnet_validate(source, target, strict, kwargs)
+        return self._python_result(validate_structure(source, target, strict, **kwargs).to_dict(), detail)
 
     def tool_docx_compare_structure(self, args: JSON) -> Any:
         source = self._resolve_path(args["source_docx"])
         target = self._resolve_path(args["target_docx"])
-        return validate_structure(
-            source,
-            target,
-            bool(args.get("strict", True)),
-            **self._validation_kwargs(args, target),
-        ).to_dict()
+        kwargs = self._validation_kwargs(args, target)
+        strict = bool(args.get("strict", True))
+        engine, detail = self._offline_engine(args)
+        if engine == "dotnet":
+            return dotnet_validate(source, target, strict, kwargs)
+        return self._python_result(validate_structure(source, target, strict, **kwargs).to_dict(), detail)
 
     def tool_docx_text_diff(self, args: JSON) -> Any:
         return diff_text(self._resolve_path(args["source_docx"]), self._resolve_path(args["target_docx"]), int(args.get("context", 2)))

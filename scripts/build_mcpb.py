@@ -129,6 +129,9 @@ def iter_files() -> list[Path]:
         ROOT / "word_ai_mcp",
         ROOT / "schemas",
     ]
+    for optional_root in [ROOT / "native", ROOT / "dist" / "native"]:
+        if optional_root.exists():
+            roots.append(optional_root)
     files = [
         ROOT / "README.md",
         ROOT / "LICENSE",

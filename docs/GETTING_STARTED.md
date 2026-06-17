@@ -32,7 +32,7 @@ cd word-ai
 bash scripts/install.sh
 ```
 
-This installs the Python MCP package, builds the Office.js taskpane, builds the .NET Open XML engine when .NET SDK 8 is available, writes `.wordai/codex-config.toml`, and installs the formal `word-ai` skill into Codex, Claude Code, and detected compatible agent clients.
+This installs the Python MCP facade, builds the Office.js taskpane, builds the .NET Open XML backend when .NET SDK 8 is available, writes `.wordai/codex-config.toml`, and installs the formal `word-ai` skill into Codex, Claude Code, and detected compatible agent clients.
 
 Windows PowerShell:
 
@@ -127,6 +127,7 @@ PYTHONPATH=. .venv/bin/python -m compileall word_ai_mcp scripts
 PYTHONPATH=. .venv/bin/python scripts/run_smoke_test.py
 PYTHONPATH=. .venv/bin/python scripts/run_structure_regression.py
 PYTHONPATH=. .venv/bin/python scripts/run_outline_regression.py
+PYTHONPATH=. .venv/bin/python scripts/run_engine_selection_regression.py
 PYTHONPATH=. .venv/bin/python scripts/run_word_session_smoke.py
 PYTHONPATH=. .venv/bin/python scripts/validate_word_ai_skill.py
 ```
@@ -135,8 +136,20 @@ Build and test the .NET engine:
 
 ```bash
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
+scripts/publish_dotnet.sh
 PYTHONPATH=. .venv/bin/python scripts/run_dotnet_regression.py
 ```
+
+## Offline Engine Selection
+
+Word AI does not require Python to implement the production DOCX writer. Python is the MCP facade and Office.js bridge runtime. Offline file transactions use the .NET Open XML backend by default when available:
+
+1. `WORD_AI_DOTNET_EXE` or packaged native executable in `native/<rid>/` or `dist/native/<rid>/`.
+2. `WORD_AI_DOTNET_DLL` or local Release DLL.
+3. Source project through `dotnet run --project`.
+4. Python OOXML fallback only when `WORD_AI_ENGINE=auto` and no .NET backend is available.
+
+Set `WORD_AI_ENGINE=dotnet` in production to fail fast if the .NET backend is missing. Use `WORD_AI_ENGINE=python` only for fallback comparison or development.
 
 Build and validate the Office add-in:
 
@@ -308,7 +321,7 @@ cd word-ai
 bash scripts/install.sh
 ```
 
-该命令会安装 Python MCP 包、构建 Office.js taskpane、在可用时构建 .NET Open XML 引擎、生成 `.wordai/codex-config.toml`，并把正式 `word-ai` Skill 安装到 Codex、Claude Code 以及已检测到的兼容 Agent 客户端。
+该命令会安装 Python MCP facade、构建 Office.js taskpane、在可用时构建 .NET Open XML 后端、生成 `.wordai/codex-config.toml`，并把正式 `word-ai` Skill 安装到 Codex、Claude Code 以及已检测到的兼容 Agent 客户端。
 
 Windows PowerShell：
 
@@ -403,11 +416,24 @@ PYTHONPATH=. .venv/bin/python -m compileall word_ai_mcp scripts
 PYTHONPATH=. .venv/bin/python scripts/run_smoke_test.py
 PYTHONPATH=. .venv/bin/python scripts/run_structure_regression.py
 PYTHONPATH=. .venv/bin/python scripts/run_outline_regression.py
+PYTHONPATH=. .venv/bin/python scripts/run_engine_selection_regression.py
 PYTHONPATH=. .venv/bin/python scripts/run_word_session_smoke.py
 PYTHONPATH=. .venv/bin/python scripts/validate_word_ai_skill.py
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
+scripts/publish_dotnet.sh
 PYTHONPATH=. .venv/bin/python scripts/run_dotnet_regression.py
 ```
+
+## 离线引擎选择
+
+Word AI 并不是要求 Python 实现生产级 DOCX writer。Python 是 MCP facade 与 Office.js bridge runtime；离线文件事务默认优先使用 .NET Open XML 后端：
+
+1. `WORD_AI_DOTNET_EXE` 或 `native/<rid>/`、`dist/native/<rid>/` 下的 native executable。
+2. `WORD_AI_DOTNET_DLL` 或本地 Release DLL。
+3. 通过 `dotnet run --project` 使用源码工程。
+4. 只有在 `WORD_AI_ENGINE=auto` 且 .NET 后端不可用时，才回退 Python OOXML。
+
+生产环境建议设置 `WORD_AI_ENGINE=dotnet`，让 .NET 后端缺失时直接失败。`WORD_AI_ENGINE=python` 只建议用于 fallback 对照或开发调试。
 
 ### Codex 配置
 
