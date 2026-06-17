@@ -59,6 +59,28 @@ jobs:
         run: |
           dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
           PYTHONPATH=. python scripts/run_dotnet_regression.py
+          PYTHONPATH=. python scripts/publish_native_backends.py linux-x64 --clean --json
+          PYTHONPATH=. python scripts/verify_native_backends.py --require-rids linux-x64
+          PYTHONPATH=. python scripts/build_mcpb.py --version 0.0.0-ci --out dist/word-ai-ci.mcpb
+          python - <<'PY'
+          import zipfile
+          from pathlib import Path
+
+          path = Path("dist/word-ai-ci.mcpb")
+          with zipfile.ZipFile(path) as zf:
+              names = set(zf.namelist())
+          required = {
+              "dist/native/linux-x64/WordAi.OpenXml",
+              "README.md",
+              "README.zh-CN.md",
+              "docs/GETTING_STARTED.md",
+              "docs/GETTING_STARTED.zh-CN.md",
+          }
+          missing = sorted(required - names)
+          if missing:
+              raise SystemExit(f"MCPB payload missing required files: {missing}")
+          print("MCPB payload validation passed")
+          PY
 
   office-addin:
     runs-on: ubuntu-latest

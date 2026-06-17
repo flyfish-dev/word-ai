@@ -1,6 +1,6 @@
 {
   "name": "@flyfish-dev/word-ai",
-  "version": "0.8.1",
+  "version": "0.8.3",
   "description": "Structure-preserving Word DOCX editing MCP server and Office.js bridge for AI agents",
   "license": "AGPL-3.0-or-later",
   "homepage": "https://github.com/flyfish-dev/word-ai#readme",
@@ -28,6 +28,14 @@
     "word-ai-mcp": "bin/word-ai-mcp.js",
     "word-ai-http": "bin/word-ai-http.js"
   },
+  "scripts": {
+    "native:publish": "python3 scripts/publish_native_backends.py",
+    "native:publish:all": "python3 scripts/publish_native_backends.py --all --clean",
+    "native:verify": "python3 scripts/verify_native_backends.py",
+    "native:verify:all": "python3 scripts/verify_native_backends.py --require-all",
+    "mcpb:build": "python3 scripts/build_mcpb.py",
+    "pack:dry-run": "npm pack --dry-run --json"
+  },
   "files": [
     "bin/",
     "word_ai_mcp/*.py",
@@ -36,6 +44,9 @@
     "codex-skill/",
     "scripts/install_agent_skills.py",
     "scripts/validate_word_ai_skill.py",
+    "scripts/publish_native_backends.py",
+    "scripts/verify_native_backends.py",
+    "scripts/package_native_assets.py",
     "scripts/publish_dotnet.sh",
     "scripts/publish_dotnet.ps1",
     "native/",

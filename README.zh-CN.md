@@ -45,7 +45,7 @@ MCP Registry 信息：
 
 - MCP server 名称：`io.github.flyfish-dev/word-ai`
 - Registry 元数据：[server.json](server.json)
-- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.1/word-ai-0.8.1.mcpb`
+- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb`
 - Registry latest API：`https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
 
 安装 Skill 和完整本地运行时：
@@ -99,7 +99,8 @@ PYTHONPATH=. .venv/bin/python scripts/run_engine_selection_regression.py
 ```bash
 dotnet --version  # 需要 .NET SDK 8
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
-scripts/publish_dotnet.sh   # 可选：生成 dist/native/<rid> native 二进制
+scripts/publish_dotnet.sh           # 当前主机 RID 到 dist/native/<rid>
+scripts/publish_dotnet.sh --all     # 所有支持的 release RID
 PYTHONPATH=. .venv/bin/python scripts/run_dotnet_regression.py
 ```
 
@@ -111,6 +112,8 @@ PYTHONPATH=. .venv/bin/python scripts/run_dotnet_regression.py
 2. `WORD_AI_DOTNET_DLL` 或本地 Release DLL：`dotnet/WordAi.OpenXml/bin/Release/net8.0/WordAi.OpenXml.dll`。
 3. 本地源码工程：`dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj`。
 4. 只有在 `WORD_AI_ENGINE=auto` 且 .NET 不可用时，才回退到 Python OOXML。
+
+发布包会携带 `osx-arm64`、`osx-x64`、`linux-x64`、`linux-arm64`、`linux-musl-x64`、`linux-musl-arm64`、`win-x64` 和 `win-arm64` 的 self-contained native 后端。运行时会自动检测当前 RID，包括 Linux glibc 与 musl，并加载匹配二进制。高级部署可用 `WORD_AI_DOTNET_RID`、`WORD_AI_DOTNET_EXE` 或 `WORD_AI_DOTNET_NATIVE_DIR` 覆盖检测。
 
 可通过 `WORD_AI_ENGINE=auto|dotnet|python` 控制，也可在 `docx_assess_patchset`、`docx_dry_run_patchset`、`docx_apply_patchset`、`docx_validate` 调用中传入 `engine`。生产环境建议设置 `WORD_AI_ENGINE=dotnet`，让后端缺失时直接失败，而不是静默回退。
 
@@ -151,7 +154,7 @@ python3 scripts/install_agent_skills.py --project
 Word AI 已通过官方 MCP Registry 和 MCPB 包进行全球发现和安装。对于 MCP host，这是优先推荐渠道，因为它提供标准化 server 元数据、版本、transport 与来源验证：
 
 - MCP server 名称：`io.github.flyfish-dev/word-ai`
-- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.1/word-ai-0.8.1.mcpb`
+- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb`
 - Registry 元数据：[server.json](server.json)
 - 发布说明：[MCP Registry 发布说明](docs/REGISTRY_PUBLISHING.zh-CN.md)
 
@@ -293,6 +296,7 @@ docx_health_check
 - [QA 验证报告](docs/QA_REPORT.md)
 - [验证矩阵](docs/VALIDATION_MATRIX.md)
 - [MCP Registry 发布说明](docs/REGISTRY_PUBLISHING.zh-CN.md)
+- [v0.8.3 变更记录](docs/CHANGELOG_V083.md)
 - [v0.8.1 变更记录](docs/CHANGELOG_V081.md)
 - [v0.8.0 变更记录](docs/CHANGELOG_V080.md)
 - [v0.7.1 变更记录](docs/CHANGELOG_V071.md)

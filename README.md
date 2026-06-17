@@ -65,7 +65,7 @@ MCP Registry details:
 
 - Server name: `io.github.flyfish-dev/word-ai`
 - Registry metadata: [server.json](server.json)
-- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.1/word-ai-0.8.1.mcpb`
+- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb`
 - Registry latest API: `https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
 
 Install the Skill and full local runtime:
@@ -119,7 +119,8 @@ Build the .NET engine:
 ```bash
 dotnet --version  # requires .NET SDK 8
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
-scripts/publish_dotnet.sh   # optional: native binary in dist/native/<rid>
+scripts/publish_dotnet.sh           # current host RID in dist/native/<rid>
+scripts/publish_dotnet.sh --all     # all supported release RIDs
 PYTHONPATH=. .venv/bin/python scripts/run_dotnet_regression.py
 ```
 
@@ -131,6 +132,8 @@ Offline file transactions use the .NET Open XML backend by default when it is av
 2. `WORD_AI_DOTNET_DLL` or the local Release DLL at `dotnet/WordAi.OpenXml/bin/Release/net8.0/WordAi.OpenXml.dll`.
 3. Local source project via `dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj`.
 4. Python OOXML fallback only when .NET is unavailable and `WORD_AI_ENGINE=auto`.
+
+Release packages include self-contained native backends for `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. Word AI detects the current RID, including Linux glibc vs musl, and loads the matching binary automatically. Advanced deployments can override detection with `WORD_AI_DOTNET_RID`, `WORD_AI_DOTNET_EXE`, or `WORD_AI_DOTNET_NATIVE_DIR`.
 
 Control it with `WORD_AI_ENGINE=auto|dotnet|python`, or pass `engine` to `docx_assess_patchset`, `docx_dry_run_patchset`, `docx_apply_patchset`, and `docx_validate`. Use `WORD_AI_ENGINE=dotnet` in production to fail fast instead of silently falling back.
 
@@ -172,7 +175,7 @@ After installation, start a new agent session or restart the client if the skill
 Word AI is published for discovery through the official MCP Registry and MCPB distribution. Prefer this channel for MCP host installation because it carries standardized server metadata, versioning, transport details, and provenance:
 
 - MCP server name: `io.github.flyfish-dev/word-ai`
-- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.1/word-ai-0.8.1.mcpb`
+- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb`
 - Registry metadata: [server.json](server.json)
 - Publishing guide: [MCP Registry Publishing](docs/REGISTRY_PUBLISHING.md)
 
@@ -367,6 +370,7 @@ docx_health_check
 - [QA Report](docs/QA_REPORT.md)
 - [Validation Matrix](docs/VALIDATION_MATRIX.md)
 - [MCP Registry Publishing](docs/REGISTRY_PUBLISHING.md)
+- [v0.8.3 Changelog](docs/CHANGELOG_V083.md)
 - [v0.8.1 Changelog](docs/CHANGELOG_V081.md)
 - [v0.8.0 Changelog](docs/CHANGELOG_V080.md)
 - [v0.7.1 Changelog](docs/CHANGELOG_V071.md)

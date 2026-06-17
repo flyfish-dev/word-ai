@@ -1,6 +1,6 @@
-# QA Report — v0.8.1 Local Verification
+# QA Report — v0.8.3 Local Verification
 
-Verification date: 2026-06-15.
+Verification date: 2026-06-17.
 
 ## Environment
 
@@ -26,12 +26,16 @@ PYTHONPATH=. python scripts/run_dotnet_regression.py
 PYTHONPATH=. python scripts/run_office_bridge_smoke.py
 PYTHONPATH=. python scripts/validate_word_ai_skill.py
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
+PYTHONPATH=. python scripts/publish_native_backends.py --all --clean --json
+PYTHONPATH=. python scripts/verify_native_backends.py --require-all
+PYTHONPATH=. python scripts/package_native_assets.py --version 0.8.3
+PYTHONPATH=. python scripts/build_mcpb.py --version 0.8.3 --out dist/word-ai-0.8.3.mcpb
+npm pack --dry-run --json
 bash scripts/install.sh
 WORD_AI_BRIDGE_PORT=8876 WORD_AI_TASKPANE_PORT=3100 bash scripts/start.sh --http
 mcp-publisher validate
-docker build -t word-ai:0.8.1-local .
-docker run --rm -i -v "$PWD:/workspace" word-ai:0.8.1-local
-PYTHONPATH=. python scripts/build_mcpb.py --version 0.8.1 --out dist/word-ai-0.8.1.mcpb
+docker build -t word-ai:0.8.3-local .
+docker run --rm -i -v "$PWD:/workspace" word-ai:0.8.3-local
 npx -y @anthropic-ai/mcpb validate <extracted-manifest.json>
 ```
 
@@ -45,6 +49,9 @@ Results:
 - Word session command-queue smoke: passed.
 - .NET build: passed with 0 warnings and 0 errors.
 - .NET PatchSet regression: passed.
+- Cross-platform native backend publish: passed for `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`.
+- Native backend verification: passed for all release RIDs; current-platform `osx-arm64` binary executed `inspect` successfully against `examples/sample_contract.docx`.
+- Runtime native selection: passed; `WORD_AI_ENGINE=auto` selected `dist/native/osx-arm64/WordAi.OpenXml`.
 - Office bridge smoke: passed.
 - Word AI Skill validation: passed.
 - One-command install script: passed.
@@ -57,25 +64,37 @@ Results:
 - Live Word session queue endpoints verified through smoke: session register, queued command claim, command completion, command status, apply command enqueue, rollback command enqueue.
 - Optional OfficeCLI wrappers are present as allowlisted tools: `officecli_view_html`, `officecli_view_screenshot`, `officecli_view_issues`, `officecli_query`, `officecli_validate`.
 - Official MCP Registry metadata validation: passed for `server.json`.
-- Local OCI image build: passed for `word-ai:0.8.1-local`.
+- Local OCI image build: passed for `word-ai:0.8.3-local`.
 - OCI image labels: `io.modelcontextprotocol.server.name=io.github.flyfish-dev/word-ai`, `org.opencontainers.image.licenses=AGPL-3.0-or-later`.
-- Container stdio MCP handshake: passed with `serverInfo.version=0.8.1`.
+- Container stdio MCP handshake: passed with `serverInfo.version=0.8.3`.
 - Container `tools/list`: passed with 63 tools.
-- Deterministic MCPB build: passed for `dist/word-ai-0.8.1.mcpb`.
+- Deterministic MCPB build: passed for `dist/word-ai-0.8.3.mcpb`.
+- MCPB native payload check: passed; all 8 native backends are included and Unix executable modes are preserved as `0755`.
 - MCPB manifest validation with `@anthropic-ai/mcpb`: passed.
-- MCPB bootstrap first-run stdio test: passed with `serverInfo.version=0.8.1` and 63 tools. Dependency installation logs are routed to stderr so stdout remains valid MCP JSON.
+- npm package dry-run: passed; payload includes split English/Chinese docs, all 8 native backends, and native publishing/verification scripts.
+- MCPB bootstrap first-run stdio test: passed with `serverInfo.version=0.8.3` and 63 tools. Dependency installation logs are routed to stderr so stdout remains valid MCP JSON.
 
 ## Global Distribution Checks
 
 - `server.json` uses official schema `https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json`.
 - MCP server name is `io.github.flyfish-dev/word-ai`.
-- Package type is MCPB with identifier `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.1/word-ai-0.8.1.mcpb`.
-- MCPB `fileSha256` is `efc091250b81364cc7c02ba56966f9b6dc090e03c04f191a0f976be0e155f53f`.
+- Package type is MCPB with identifier `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb`.
+- MCPB `fileSha256` is `f0cef8126e6ef76a52aa89b875cba98e40d1c34547d056dcc725bfd336d157c0`.
 - Transport is `stdio`.
-- Release workflow `.github/workflows/release-mcp.yml` builds a deterministic MCPB, uploads it to the GitHub Release, then runs `mcp-publisher login github-oidc`, `mcp-publisher validate`, and `mcp-publisher publish`.
+- Release workflow `.github/workflows/release-mcp.yml` builds all native backends, verifies current-platform native execution, packages per-RID native assets, builds a deterministic MCPB, publishes npm packages when needed, uploads GitHub Release assets, then runs `mcp-publisher login github-oidc`, `mcp-publisher validate`, and `mcp-publisher publish`.
 - Project license metadata is `AGPL-3.0-or-later`.
 - MCP Registry/MCPB is the primary global distribution path for MCP host discovery.
-- npm is a secondary convenience channel. Published packages were verified separately as `@flyfish-dev/word-ai@0.8.1` and unscoped `word-ai-mcp@0.8.2`.
+- npm is a secondary convenience channel. v0.8.3 release automation targets both `@flyfish-dev/word-ai@0.8.3` and unscoped `word-ai-mcp@0.8.3`; local npm publish was not attempted because this machine is not authenticated to npm.
+- GitHub Release native assets generated locally:
+  `word-ai-openxml-0.8.3-osx-arm64.tar.gz`,
+  `word-ai-openxml-0.8.3-osx-x64.tar.gz`,
+  `word-ai-openxml-0.8.3-linux-x64.tar.gz`,
+  `word-ai-openxml-0.8.3-linux-arm64.tar.gz`,
+  `word-ai-openxml-0.8.3-linux-musl-x64.tar.gz`,
+  `word-ai-openxml-0.8.3-linux-musl-arm64.tar.gz`,
+  `word-ai-openxml-0.8.3-win-x64.zip`,
+  `word-ai-openxml-0.8.3-win-arm64.zip`,
+  and `word-ai-openxml-0.8.3-checksums.sha256`.
 
 ## Structural Validation Evidence
 
@@ -137,6 +156,8 @@ dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release -- d
 dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release -- apply examples/sample_contract.docx examples/patches/replace_srs_sections.json examples/sample_contract.dotnet.edited.docx
 dotnet run --project dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release -- validate examples/sample_contract.docx examples/sample_contract.dotnet.edited.docx <validation-options.json>
 scripts/publish_dotnet.sh
+scripts/publish_dotnet.sh --all
+PYTHONPATH=. python scripts/verify_native_backends.py --require-all
 ```
 
 Results:
@@ -147,7 +168,8 @@ Results:
 - `dry-run`: `validation.ok=true`, output removed when `keep_output=false`.
 - `apply`: wrote `examples/sample_contract.dotnet.edited.docx` and `examples/sample_contract.dotnet.edited.audit.json`.
 - `validate`: supports optional validation-options JSON for touched scopes; `ok=true`, changed parts `["word/document.xml"]`, new OpenXmlValidator errors `0`.
-- Native binary publish script: passed locally for the detected runtime identifier when executed.
+- Native binary publish script: passed locally for every release RID.
+- Native release asset packaging: passed; per-RID archives and checksum file were generated under `dist/release-assets`.
 - `scripts/run_dotnet_regression.py`: passed all C# PatchSet operations:
   `replace_content_control_text`, `replace_text_in_content_control`, `append_content_control_text`, `prepend_content_control_text`, `replace_table_cell_text`, `replace_paragraph_text`, `append_table_row`, `add_comment`, `insert_paragraph_after`, `insert_paragraph_before`, `wrap_paragraph_with_content_control`.
 
@@ -218,4 +240,4 @@ Browser verification against `http://localhost:3100/taskpane.html`:
 - Word desktop sideload and true Office.js host operations (`Wrap`, `List Open`, `Apply Open`, `word_session_apply_patchset`) were not fully automated in this browser-only pass. The TypeScript host code compiles, and the local queue protocol is covered by smoke tests; a real Word host is still required to execute `Word.run(...)`.
 - HTTPS dev server certificate flow (`npm run dev`) was not exercised because the automated check used `npm run dev:http`; manifest HTTPS validation passed.
 - True MCP Streamable HTTP compatibility: current HTTP adapter is a basic local JSON-RPC adapter, not a production remote MCP transport.
-- Future MCP Registry publications depend on pushing a `v*` tag and the GitHub Actions release workflow completing successfully.
+- npm publication depends on either trusted publishing being configured for both npm package names or `NPM_TOKEN` being present as a GitHub Actions secret.

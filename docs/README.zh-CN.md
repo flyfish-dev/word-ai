@@ -21,6 +21,7 @@
 - [稳定性策略](STABILITY_POLICY.md)：编辑风险分级与安全边界。
 - [开发计划](DEVELOPMENT_PLAN.md)：生产化路线图。
 - [工具清单](CODEX_TOOL_CATALOG.md)：MCP tools 目录。
+- [v0.8.3 变更记录](CHANGELOG_V083.md)：跨平台 native 分发与完整发布产物。
 - [v0.8.1 变更记录](CHANGELOG_V081.md)：MCPB Registry 发布路径。
 - [v0.8.0 变更记录](CHANGELOG_V080.md)：严格许可证和全球 MCP 分发。
 - [v0.7.1 变更记录](CHANGELOG_V071.md)：面向外部文档目录的多 root 路径访问。

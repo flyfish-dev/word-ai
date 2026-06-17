@@ -25,7 +25,7 @@ MCP Registry details:
 
 - Server name: `io.github.flyfish-dev/word-ai`
 - Registry metadata: [server.json](../server.json)
-- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.1/word-ai-0.8.1.mcpb`
+- MCPB package: `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb`
 - Registry latest API: `https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
 
 Recommended one-command setup:
@@ -141,7 +141,8 @@ Build and test the .NET engine:
 
 ```bash
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
-scripts/publish_dotnet.sh
+scripts/publish_dotnet.sh           # current host RID
+scripts/publish_dotnet.sh --all     # all supported release RIDs
 PYTHONPATH=. .venv/bin/python scripts/run_dotnet_regression.py
 ```
 
@@ -153,6 +154,8 @@ Word AI does not require Python to implement the production DOCX writer. Python 
 2. `WORD_AI_DOTNET_DLL` or local Release DLL.
 3. Source project through `dotnet run --project`.
 4. Python OOXML fallback only when `WORD_AI_ENGINE=auto` and no .NET backend is available.
+
+Official release packages include `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. Word AI chooses the current platform automatically; set `WORD_AI_DOTNET_RID`, `WORD_AI_DOTNET_EXE`, or `WORD_AI_DOTNET_NATIVE_DIR` only for custom packaging.
 
 Set `WORD_AI_ENGINE=dotnet` in production to fail fast if the .NET backend is missing. Use `WORD_AI_ENGINE=python` only for fallback comparison or development.
 

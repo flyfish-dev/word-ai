@@ -30,6 +30,17 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
@@ -39,13 +50,62 @@ jobs:
         run: |
           PYTHONPATH=. python -m compileall word_ai_mcp scripts
           PYTHONPATH=. python scripts/run_smoke_test.py
+          PYTHONPATH=. python scripts/run_structure_regression.py
+          PYTHONPATH=. python scripts/run_outline_regression.py
+          PYTHONPATH=. python scripts/run_engine_selection_regression.py
           PYTHONPATH=. python scripts/run_word_session_smoke.py
+          PYTHONPATH=. python scripts/validate_word_ai_skill.py
+
+      - name: Build all native .NET Open XML backends
+        run: |
+          PYTHONPATH=. python scripts/publish_native_backends.py --all --clean --json
+          PYTHONPATH=. python scripts/verify_native_backends.py --require-all
+
+      - name: Package native release assets
+        run: |
+          PYTHONPATH=. python scripts/package_native_assets.py --version "$VERSION"
 
       - name: Build deterministic MCPB
         run: |
           PYTHONPATH=. python scripts/build_mcpb.py --version "$VERSION" --out "$MCPB_PATH"
           SHA256="$(shasum -a 256 "$MCPB_PATH" | awk '{print $1}')"
           echo "MCPB_SHA256=${SHA256}" >> "$GITHUB_ENV"
+
+      - name: npm package smoke
+        run: |
+          npm pack --dry-run --json > dist/npm-scoped-pack.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(Path("dist/npm-scoped-pack.json").read_text())[0]
+          paths = {item["path"] for item in data["files"]}
+          required = {
+              "README.md",
+              "README.zh-CN.md",
+              "docs/GETTING_STARTED.md",
+              "docs/GETTING_STARTED.zh-CN.md",
+              "scripts/publish_native_backends.py",
+              "scripts/verify_native_backends.py",
+              "scripts/package_native_assets.py",
+          }
+          for rid in [
+              "osx-arm64",
+              "osx-x64",
+              "linux-x64",
+              "linux-arm64",
+              "linux-musl-x64",
+              "linux-musl-arm64",
+              "win-x64",
+              "win-arm64",
+          ]:
+              name = "WordAi.OpenXml.exe" if rid.startswith("win-") else "WordAi.OpenXml"
+              required.add(f"dist/native/{rid}/{name}")
+          missing = sorted(required - paths)
+          if missing:
+              raise SystemExit(f"npm package is missing required files: {missing}")
+          print("npm package payload includes docs and all native backends")
+          PY
 
       - name: Align server.json with tag and MCPB
         run: |
@@ -100,12 +160,53 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "$MCPB_PATH" --clobber
+            gh release upload "$GITHUB_REF_NAME" "$MCPB_PATH" dist/release-assets/* --clobber
           else
-            gh release create "$GITHUB_REF_NAME" "$MCPB_PATH" \
+            NOTES="docs/CHANGELOG_V081.md"
+            CANDIDATE="docs/CHANGELOG_V$(echo "$VERSION" | tr -d '.').md"
+            if [ -f "$CANDIDATE" ]; then
+              NOTES="$CANDIDATE"
+            fi
+            gh release create "$GITHUB_REF_NAME" "$MCPB_PATH" dist/release-assets/* \
               --title "Word AI ${VERSION}" \
-              --notes-file "docs/CHANGELOG_V081.md"
+              --notes-file "$NOTES"
           fi
+
+      - name: Publish scoped npm package
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if npm view "@flyfish-dev/word-ai@${VERSION}" version >/dev/null 2>&1; then
+            echo "@flyfish-dev/word-ai@${VERSION} already exists; skipping."
+            exit 0
+          fi
+          if [ -n "${NPM_TOKEN:-}" ]; then
+            printf '//registry.npmjs.org/:_authToken=%s\n' "$NPM_TOKEN" > "$HOME/.npmrc"
+          fi
+          npm publish --provenance --access public
+
+      - name: Publish unscoped npm compatibility package
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if npm view "word-ai-mcp@${VERSION}" version >/dev/null 2>&1; then
+            echo "word-ai-mcp@${VERSION} already exists; skipping."
+            exit 0
+          fi
+          if [ -n "${NPM_TOKEN:-}" ]; then
+            printf '//registry.npmjs.org/:_authToken=%s\n' "$NPM_TOKEN" > "$HOME/.npmrc"
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("package.json")
+          data = json.loads(path.read_text())
+          data["name"] = "word-ai-mcp"
+          data["description"] = "Unscoped compatibility package for the Word AI MCP server and Office.js bridge"
+          path.write_text(json.dumps(data, indent=2) + "\n")
+          PY
+          npm publish --provenance --access public
 
       - name: Install mcp-publisher
         run: |

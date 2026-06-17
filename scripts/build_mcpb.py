@@ -128,12 +128,14 @@ def iter_files() -> list[Path]:
     roots = [
         ROOT / "word_ai_mcp",
         ROOT / "schemas",
+        ROOT / "docs",
     ]
     for optional_root in [ROOT / "native", ROOT / "dist" / "native"]:
         if optional_root.exists():
             roots.append(optional_root)
     files = [
         ROOT / "README.md",
+        ROOT / "README.zh-CN.md",
         ROOT / "LICENSE",
         ROOT / "mcpb_bootstrap.py",
         ROOT / "pyproject.toml",
@@ -164,7 +166,8 @@ def build(out_path: Path, version: str) -> str:
             (json.dumps(manifest(version), indent=2) + "\n").encode(),
         )
         for path in iter_files():
-            write_entry(zf, path.relative_to(ROOT).as_posix(), path.read_bytes())
+            mode = stat.S_IMODE(path.stat().st_mode)
+            write_entry(zf, path.relative_to(ROOT).as_posix(), path.read_bytes(), mode=mode)
     digest = hashlib.sha256(out_path.read_bytes()).hexdigest()
     return digest
 

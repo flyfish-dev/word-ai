@@ -24,7 +24,7 @@ MCP Registry 信息：
 
 - MCP server 名称：`io.github.flyfish-dev/word-ai`
 - Registry 元数据：[server.json](../server.json)
-- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.1/word-ai-0.8.1.mcpb`
+- MCPB 包：`https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb`
 - Registry latest API：`https://registry.modelcontextprotocol.io/v0.1/servers/io.github.flyfish-dev%2Fword-ai/versions/latest`
 
 推荐一键安装：
@@ -135,7 +135,8 @@ PYTHONPATH=. .venv/bin/python scripts/run_engine_selection_regression.py
 PYTHONPATH=. .venv/bin/python scripts/run_word_session_smoke.py
 PYTHONPATH=. .venv/bin/python scripts/validate_word_ai_skill.py
 dotnet build dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj -c Release
-scripts/publish_dotnet.sh
+scripts/publish_dotnet.sh           # 当前主机 RID
+scripts/publish_dotnet.sh --all     # 所有支持的 release RID
 PYTHONPATH=. .venv/bin/python scripts/run_dotnet_regression.py
 ```
 
@@ -147,6 +148,8 @@ Word AI 并不是要求 Python 实现生产级 DOCX writer。Python 是 MCP faca
 2. `WORD_AI_DOTNET_DLL` 或本地 Release DLL。
 3. 通过 `dotnet run --project` 使用源码工程。
 4. 只有在 `WORD_AI_ENGINE=auto` 且 .NET 后端不可用时，才回退 Python OOXML。
+
+官方发布包包含 `osx-arm64`、`osx-x64`、`linux-x64`、`linux-arm64`、`linux-musl-x64`、`linux-musl-arm64`、`win-x64` 和 `win-arm64`。Word AI 会自动选择当前平台；只有自定义打包时才需要设置 `WORD_AI_DOTNET_RID`、`WORD_AI_DOTNET_EXE` 或 `WORD_AI_DOTNET_NATIVE_DIR`。
 
 生产环境建议设置 `WORD_AI_ENGINE=dotnet`，让 .NET 后端缺失时直接失败。`WORD_AI_ENGINE=python` 只建议用于 fallback 对照或开发调试。
 

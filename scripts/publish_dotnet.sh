@@ -4,30 +4,14 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RID="${1:-}"
 
-if [ -z "$RID" ]; then
-  OS="$(uname -s)"
-  ARCH="$(uname -m)"
-  case "$ARCH" in
-    arm64|aarch64) ARCH_ID="arm64" ;;
-    x86_64|amd64) ARCH_ID="x64" ;;
-    *) echo "Unsupported architecture: $ARCH" >&2; exit 2 ;;
-  esac
-  case "$OS" in
-    Darwin) RID="osx-$ARCH_ID" ;;
-    Linux) RID="linux-$ARCH_ID" ;;
-    *) echo "Unsupported OS: $OS" >&2; exit 2 ;;
-  esac
+PYTHON="${PYTHON:-python3}"
+
+if [ "$RID" = "--all" ] || [ "$RID" = "all" ]; then
+  exec "$PYTHON" "$ROOT/scripts/publish_native_backends.py" --all --clean
 fi
 
-OUT="$ROOT/dist/native/$RID"
-dotnet publish "$ROOT/dotnet/WordAi.OpenXml/WordAi.OpenXml.csproj" \
-  -c Release \
-  -r "$RID" \
-  --self-contained true \
-  -p:UseAppHost=true \
-  -p:PublishSingleFile=true \
-  -p:PublishTrimmed=false \
-  -p:EnableCompressionInSingleFile=true \
-  -o "$OUT"
+if [ -n "$RID" ]; then
+  exec "$PYTHON" "$ROOT/scripts/publish_native_backends.py" "$RID" --clean
+fi
 
-echo "Published WordAi.OpenXml native backend to: $OUT"
+exec "$PYTHON" "$ROOT/scripts/publish_native_backends.py" --clean

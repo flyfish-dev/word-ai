@@ -21,15 +21,16 @@ Word AI is published for global discovery through the official MCP Registry usin
 Build the deterministic MCPB bundle:
 
 ```bash
-scripts/publish_dotnet.sh osx-arm64      # repeat for each release RID in CI
-scripts/publish_dotnet.sh linux-x64
-scripts/publish_dotnet.sh linux-arm64
-powershell -ExecutionPolicy Bypass -File scripts\publish_dotnet.ps1 -RuntimeIdentifier win-x64
-PYTHONPATH=. python scripts/build_mcpb.py --version 0.8.1 --out dist/word-ai-0.8.1.mcpb
-shasum -a 256 dist/word-ai-0.8.1.mcpb
+scripts/publish_dotnet.sh --all
+PYTHONPATH=. python scripts/verify_native_backends.py --require-all
+PYTHONPATH=. python scripts/package_native_assets.py --version 0.8.3
+PYTHONPATH=. python scripts/build_mcpb.py --version 0.8.3 --out dist/word-ai-0.8.3.mcpb
+shasum -a 256 dist/word-ai-0.8.3.mcpb
 ```
 
-When `dist/native/<rid>/WordAi.OpenXml` exists before the MCPB build, the native .NET Open XML backend is bundled and selected before DLL/project/Python fallback. The MCPB bootstrap still requires Python 3.10+ for the MCP facade. On first run it creates `.word-ai-mcpb-venv` inside the installed bundle directory, installs Word AI dependencies there, and then starts the stdio MCP server. Bootstrap installation logs are written to stderr so stdout remains reserved for MCP JSON-RPC.
+The release RID set is `osx-arm64`, `osx-x64`, `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`, `win-x64`, and `win-arm64`. When `dist/native/<rid>/WordAi.OpenXml` or `WordAi.OpenXml.exe` exists before the MCPB/npm build, the native .NET Open XML backend is bundled and selected before DLL/project/Python fallback. The MCPB bootstrap still requires Python 3.10+ for the MCP facade. On first run it creates `.word-ai-mcpb-venv` inside the installed bundle directory, installs Word AI dependencies there, and then starts the stdio MCP server. Bootstrap installation logs are written to stderr so stdout remains reserved for MCP JSON-RPC.
+
+GitHub Releases also include per-RID native archives named `word-ai-openxml-<version>-<rid>.tar.gz` or `.zip`, plus `word-ai-openxml-<version>-checksums.sha256`.
 
 Build the optional local container:
 
@@ -71,14 +72,16 @@ npm exec --yes --package word-ai-mcp -- word-ai-mcp --root "$PWD"
 3. Create and push a version tag:
 
    ```bash
-   git tag v0.8.1
-   git push origin v0.8.1
+   git tag v0.8.3
+   git push origin v0.8.3
    ```
 
-4. GitHub Actions publishes native .NET backends for target RIDs, builds `word-ai-<version>.mcpb`, and computes its `fileSha256`.
-5. The workflow uploads the MCPB file to the GitHub Release.
-6. The workflow authenticates to the MCP Registry with GitHub OIDC.
-7. `mcp-publisher validate` and `mcp-publisher publish` publish the version metadata from `server.json`.
+4. GitHub Actions publishes native .NET backends for all release RIDs and verifies the current-platform binary.
+5. The workflow builds `word-ai-<version>.mcpb`, computes its `fileSha256`, and verifies npm payload contents.
+6. The workflow uploads the MCPB file, per-RID native archives, and checksums to the GitHub Release.
+7. The workflow publishes `@flyfish-dev/word-ai` and `word-ai-mcp` to npm when that version is not already present.
+8. The workflow authenticates to the MCP Registry with GitHub OIDC.
+9. `mcp-publisher validate` and `mcp-publisher publish` publish the version metadata from `server.json`.
 
 ## Verification
 

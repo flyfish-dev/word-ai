@@ -46,8 +46,32 @@ def _runtime_id() -> str | None:
     if sys_platform().startswith("darwin"):
         return f"osx-{arch}"
     if sys_platform().startswith("linux"):
-        return f"linux-{arch}"
+        return f"{_linux_rid_prefix()}-{arch}"
     return None
+
+
+def _linux_rid_prefix() -> str:
+    libc_name = (platform.libc_ver()[0] or "").lower()
+    if "musl" in libc_name:
+        return "linux-musl"
+    return "linux"
+
+
+def _runtime_id_candidates() -> list[str]:
+    configured = os.environ.get("WORD_AI_DOTNET_RID")
+    candidates: list[str] = [configured.strip()] if configured and configured.strip() else []
+    rid = _runtime_id()
+    if rid:
+        candidates.append(rid)
+        if rid.startswith("linux-musl-"):
+            candidates.append(rid.replace("linux-musl-", "linux-", 1))
+        elif rid.startswith("linux-"):
+            candidates.append(rid.replace("linux-", "linux-musl-", 1))
+    deduped: list[str] = []
+    for candidate in candidates:
+        if candidate not in deduped:
+            deduped.append(candidate)
+    return deduped
 
 
 def sys_platform() -> str:
@@ -67,20 +91,26 @@ def _dotnet_command() -> str | None:
     return shutil.which("dotnet")
 
 
-def _native_name() -> str:
-    return "WordAi.OpenXml.exe" if os.name == "nt" else "WordAi.OpenXml"
+def _native_name(rid: str | None = None) -> str:
+    if (rid or "").startswith("win-") or os.name == "nt":
+        return "WordAi.OpenXml.exe"
+    return "WordAi.OpenXml"
 
 
 def _candidate_native_executables(root: Path) -> list[Path]:
     configured = os.environ.get("WORD_AI_DOTNET_EXE")
     candidates: list[Path] = [Path(configured).expanduser()] if configured else []
-    rid = _runtime_id()
-    if rid:
-        name = _native_name()
+    configured_native_root = os.environ.get("WORD_AI_DOTNET_NATIVE_DIR")
+    native_roots = []
+    if configured_native_root:
+        native_roots.append(Path(configured_native_root).expanduser())
+    native_roots.extend([root / "native", root / "dist" / "native"])
+    for rid in _runtime_id_candidates():
+        name = _native_name(rid)
+        for native_root in native_roots:
+            candidates.append(native_root / rid / name)
         candidates.extend(
             [
-                root / "native" / rid / name,
-                root / "dist" / "native" / rid / name,
                 root / "dotnet" / "WordAi.OpenXml" / "bin" / "Release" / "net8.0" / rid / "publish" / name,
             ]
         )
@@ -105,6 +135,8 @@ def dotnet_status(root: str | Path | None = None) -> JSON:
                 "command": [str(exe)],
                 "root": str(root_path),
                 "runtime_id": _runtime_id(),
+                "runtime_id_candidates": _runtime_id_candidates(),
+                "native_path": str(exe),
             }
 
     dotnet = _dotnet_command()
@@ -118,6 +150,7 @@ def dotnet_status(root: str | Path | None = None) -> JSON:
                     "command": [dotnet, str(dll)],
                     "root": str(root_path),
                     "runtime_id": _runtime_id(),
+                    "runtime_id_candidates": _runtime_id_candidates(),
                 }
         project = root_path / "dotnet" / "WordAi.OpenXml" / "WordAi.OpenXml.csproj"
         if project.exists():
@@ -128,6 +161,7 @@ def dotnet_status(root: str | Path | None = None) -> JSON:
                 "command": [dotnet, "run", "--project", str(project), "-c", "Release", "--"],
                 "root": str(root_path),
                 "runtime_id": _runtime_id(),
+                "runtime_id_candidates": _runtime_id_candidates(),
             }
 
     return {
@@ -136,6 +170,7 @@ def dotnet_status(root: str | Path | None = None) -> JSON:
         "mode": None,
         "root": str(root_path),
         "runtime_id": _runtime_id(),
+        "runtime_id_candidates": _runtime_id_candidates(),
         "reason": "No WordAi.OpenXml native binary, DLL, or .NET SDK/project backend was found.",
     }
 
