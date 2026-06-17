@@ -80,7 +80,7 @@ Results:
 - `server.json` uses official schema `https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json`.
 - MCP server name is `io.github.flyfish-dev/word-ai`.
 - Package type is MCPB with identifier `https://github.com/flyfish-dev/word-ai/releases/download/v0.8.3/word-ai-0.8.3.mcpb`.
-- MCPB `fileSha256` is `1240349d160b39eb96d221d10de8310a99bfbcf39e276c87ef556740a016342d`.
+- Published GitHub Release and MCP Registry MCPB `fileSha256` is `390675ba320b4fc4dad9202fdb61503a798b29221be2873f25665e3bbb6c2fb3`.
 - Transport is `stdio`.
 - Release workflow `.github/workflows/release-mcp.yml` builds all native backends, verifies current-platform native execution, packages per-RID native assets, builds a deterministic MCPB, publishes npm packages when needed, uploads GitHub Release assets, then runs `mcp-publisher login github-oidc`, `mcp-publisher validate`, and `mcp-publisher publish`.
 - Project license metadata is `AGPL-3.0-or-later`.
