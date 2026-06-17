@@ -52,3 +52,6 @@ rendered/
 *.pdf
 *.png
 *.csv
+!office-addin/assets/
+!office-addin/assets/icon-32.png
+!office-addin/assets/icon-64.png
